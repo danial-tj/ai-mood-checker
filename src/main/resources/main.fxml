@@ -22,9 +22,9 @@
     
     <HBox spacing="24" alignment="CENTER">
         <Button text="😊 Check Mood" 
-                styleClass="modern-button primary-button"/>
+                styleClass="primary-button"/>
         <Button text="📊 View History" 
-                styleClass="modern-button secondary-button"/>
+                styleClass="secondary-button"/>
     </HBox>
     
 </VBox>

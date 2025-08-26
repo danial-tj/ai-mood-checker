@@ -18,9 +18,9 @@
     <HBox spacing="16" alignment="CENTER">
         <Button text="💾 Save" 
                 onAction="#onSave"
-                styleClass="modern-button success-button"/>
+                styleClass="success-button"/>
         <Button text="❌ Cancel" 
                 onAction="#onCancel"
-                styleClass="modern-button danger-button"/>
+                styleClass="danger-button"/>
     </HBox>
 </VBox>

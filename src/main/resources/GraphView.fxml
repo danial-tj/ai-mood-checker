@@ -14,7 +14,7 @@
             <HBox spacing="16" alignment="CENTER_LEFT">
             <Button text="← Back" 
                     onAction="#onBack" 
-                    styleClass="modern-button secondary-button"/>
+                    styleClass="nav-button"/>
             <Label text="📊 Mood Trends" 
                    styleClass="title-label" 
                    style="-fx-font-size: 24px;"/>
@@ -26,7 +26,7 @@
                       styleClass="modern-combo"/>
             <Button text="🔄 Refresh" 
                     onAction="#onRefresh" 
-                    styleClass="modern-button info-button small-button"/>
+                    styleClass="compact-nav-button"/>
         </HBox>
 
     <!-- Status label for feedback -->

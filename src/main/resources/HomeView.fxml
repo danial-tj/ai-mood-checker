@@ -33,12 +33,12 @@
             <Button fx:id="logMoodBtn" 
                     text="📝 Log Mood" 
                     onAction="#handleLogMood"
-                    styleClass="modern-button primary-button"/>
+                    styleClass="primary-button"/>
             
             <Button fx:id="viewHistoryBtn" 
                     text="📊 View History" 
                     onAction="#handleViewHistory"
-                    styleClass="modern-button secondary-button"/>
+                    styleClass="secondary-button"/>
         </HBox>
     </VBox>
 

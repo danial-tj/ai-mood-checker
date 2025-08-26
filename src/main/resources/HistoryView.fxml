@@ -18,7 +18,7 @@
         <HBox spacing="16" alignment="CENTER">
             <Button text="🔄 Refresh" 
                 onAction="#onRefresh" 
-                styleClass="modern-button info-button"/>
+                styleClass="nav-button"/>
 
             <Pane HBox.hgrow="ALWAYS" />
         </HBox>
@@ -48,10 +48,10 @@
 
         <Button text="🏠 Back to Home" 
                 onAction="#onBackHome" 
-                styleClass="modern-button secondary-button"/>
+                styleClass="nav-button"/>
 
         <Button text="📊 View Graph" 
                 onAction="#onViewGraph" 
-                styleClass="modern-button primary-button"/>
+                styleClass="nav-button"/>
     </HBox>
 </VBox>

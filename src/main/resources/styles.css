@@ -1,4 +1,4 @@
-/* ===== MODERN 2024 AI MOOD CHECKER STYLING ===== */
+/* ===== CLEAN AI MOOD CHECKER STYLING ===== */
 
 /* Root styles and CSS variables */
 .root {
@@ -9,34 +9,6 @@
 * {
     -fx-border-color: transparent;
     -fx-outline-color: transparent;
-}
-
-/* Force ALL buttons to have modern styling by default */
-.button {
-    -fx-font-size: 20px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 20 40 !important;
-    -fx-background-radius: 16 !important;
-    -fx-border-radius: 16 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 200 !important;
-    -fx-min-height: 60 !important;
-    -fx-pref-width: 200 !important;
-    -fx-pref-height: 60 !important;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 6, 0, 0, 2) !important;
-    -fx-border-width: 0 !important;
-    -fx-text-fill: white !important;
-    -fx-background-color: #8b5cf6 !important;  /* purple base */
-}
-
-.button:hover {
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 8, 0, 0, 3) !important;
-    -fx-scale-x: 1.02 !important;
-    -fx-scale-y: 1.02 !important;
-}
-
-.button:pressed {
-    -fx-opacity: 0.8 !important;
 }
 
 /* Main container styles with unified purple theme */
@@ -81,148 +53,309 @@
     -fx-font-weight: bold;
 }
 
-/* Ultra-modern button system with much larger sizing - HIGH SPECIFICITY */
-.button.modern-button {
-    -fx-font-size: 24px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 32 64 !important;
-    -fx-background-radius: 20 !important;
-    -fx-border-radius: 20 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 350 !important;
-    -fx-min-height: 80 !important;
-    -fx-pref-width: 350 !important;
-    -fx-pref-height: 80 !important;
-    -fx-max-width: 400 !important;
-    -fx-max-height: 100 !important;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 2) !important;
-    -fx-border-width: 0 !important;
-    -fx-text-fill: white !important;
-    /* Remove background color to allow specific button classes to work */
+/* ===== CLEAN BUTTON SYSTEM - SEPARATE CLASSES ===== */
+
+/* ===== HOME PAGE BUTTONS ===== */
+
+/* Primary button (Log Mood) - GREEN */
+.primary-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 16 32;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 150;
+    -fx-min-height: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #22c55e;
 }
 
-.button.modern-button:hover {
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 12, 0, 0, 4);
+.primary-button:hover {
+    -fx-background-color: #16a34a;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
     -fx-scale-x: 1.02;
     -fx-scale-y: 1.02;
 }
 
-.button.modern-button:pressed {
+.primary-button:pressed {
     -fx-opacity: 0.8;
 }
 
-/* Primary button with gradient - HIGH SPECIFICITY - BRIGHT GREEN */
-.button.modern-button.primary-button {
-    -fx-background-color: #22c55e !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.4), 8, 0, 0, 2) !important;
+/* Secondary button (View History) - PURPLE */
+.secondary-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 16 32;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 150;
+    -fx-min-height: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #8b5cf6;
 }
 
-.button.modern-button.primary-button:hover {
-    -fx-background-color: #16a34a !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 12, 0, 0, 4) !important;
-    -fx-scale-x: 1.02 !important;
-    -fx-scale-y: 1.02 !important;
-}
-
-/* Secondary button - HIGH SPECIFICITY */
-.button.modern-button.secondary-button {
-    -fx-background-color: #a855f7 !important;
-    -fx-effect: dropshadow(gaussian, rgba(168, 85, 247, 0.4), 8, 0, 0, 2) !important;
-}
-
-.button.modern-button.secondary-button:hover {
-    -fx-effect: dropshadow(gaussian, rgba(147, 51, 234, 0.5), 12, 0, 0, 4);
+.secondary-button:hover {
+    -fx-background-color: #7c3aed;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
     -fx-scale-x: 1.02;
     -fx-scale-y: 1.02;
 }
 
-/* Success button - HIGH SPECIFICITY - BRIGHT GREEN for save */
-.button.modern-button.success-button {
-    -fx-background-color: #22c55e !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.4), 8, 0, 0, 2) !important;
-}
-
-.button.modern-button.success-button:hover {
-    -fx-background-color: #16a34a !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 12, 0, 0, 4) !important;
-}
-
-/* Danger button - HIGH SPECIFICITY - BRIGHT RED for cancel/delete */
-.button.modern-button.danger-button {
-    -fx-background-color: #ef4444 !important;
-    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.4), 8, 0, 0, 2) !important;
-}
-
-.button.modern-button.danger-button:hover {
-    -fx-background-color: #dc2626 !important;
-    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.5), 12, 0, 0, 4) !important;
-}
-
-/* Enhanced mood buttons with emojis - much larger sizing - HIGH SPECIFICITY */
-.button.mood-button {
-    -fx-font-size: 24px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 32 48 !important;
-    -fx-background-radius: 24 !important;
-    -fx-border-radius: 24 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 220 !important;
-    -fx-min-height: 80 !important;
-    -fx-pref-width: 220 !important;
-    -fx-pref-height: 80 !important;
-    -fx-max-width: 280 !important;
-    -fx-max-height: 100 !important;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 8, 0, 0, 3) !important;
-    -fx-border-width: 0 !important;
-    -fx-text-fill: white !important;
-}
-
-.button.mood-button:hover {
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 12, 0, 0, 5);
-}
-
-.button.mood-button:pressed {
+.secondary-button:pressed {
     -fx-opacity: 0.8;
 }
 
-/* Happy mood button - HIGH SPECIFICITY - BRIGHT GREEN for happiness */
-.button.mood-button.happy-button {
-    -fx-background-color: #22c55e !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.4), 8, 0, 0, 3) !important;
+/* ===== COMPOSE VIEW BUTTONS ===== */
+
+/* Happy mood button - GREEN */
+.happy-button {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-padding: 20 40;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 180;
+    -fx-min-height: 60;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #22c55e;
 }
 
-.button.mood-button.happy-button:hover {
-    -fx-background-color: #16a34a !important;
-    -fx-effect: dropshadow(gaussian, rgba(34, 197, 94, 0.5), 12, 0, 0, 5) !important;
+.happy-button:hover {
+    -fx-background-color: #16a34a;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
 }
 
-/* Neutral mood button - HIGH SPECIFICITY - YELLOW for neutral */
-.button.mood-button.neutral-button {
-    -fx-background-color: #eab308 !important;
-    -fx-effect: dropshadow(gaussian, rgba(234, 179, 8, 0.4), 8, 0, 0, 3) !important;
+.happy-button:pressed {
+    -fx-opacity: 0.8;
 }
 
-.button.mood-button.neutral-button:hover {
-    -fx-background-color: #ca8a04 !important;
-    -fx-effect: dropshadow(gaussian, rgba(234, 179, 8, 0.5), 12, 0, 0, 5) !important;
+/* Neutral mood button - YELLOW */
+.neutral-button {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-padding: 20 40;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 180;
+    -fx-min-height: 60;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #eab308;
 }
 
-/* Sad mood button - HIGH SPECIFICITY - BLUE for sadness */
-.button.mood-button.sad-button {
-    -fx-background-color: #3b82f6 !important;
-    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.4), 8, 0, 0, 3) !important;
+.neutral-button:hover {
+    -fx-background-color: #ca8a04;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
 }
 
-.button.mood-button.sad-button:hover {
-    -fx-background-color: #2563eb !important;
-    -fx-effect: dropshadow(gaussian, rgba(59, 130, 246, 0.5), 12, 0, 0, 5) !important;
+.neutral-button:pressed {
+    -fx-opacity: 0.8;
 }
 
+/* Sad mood button - BLUE */
+.sad-button {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-padding: 20 40;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 180;
+    -fx-min-height: 60;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #3b82f6;
+}
 
+.sad-button:hover {
+    -fx-background-color: #2563eb;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
 
+.sad-button:pressed {
+    -fx-opacity: 0.8;
+}
 
+/* ===== ACTION BUTTONS ===== */
 
-/* Modern TextArea with unified theme - single border */
+/* Success button (Save Mood) - GREEN */
+.success-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 16 32;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 150;
+    -fx-min-height: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #22c55e;
+}
+
+.success-button:hover {
+    -fx-background-color: #16a34a;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.success-button:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* Danger button (Cancel) - RED */
+.danger-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 16 32;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 150;
+    -fx-min-height: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #ef4444;
+}
+
+.danger-button:hover {
+    -fx-background-color: #dc2626;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.danger-button:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* ===== NAVIGATION BUTTONS ===== */
+
+/* Navigation buttons (Back, Refresh, View Graph) - PURPLE */
+.nav-button {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-padding: 16 32;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-cursor: hand;
+    -fx-min-width: 150;
+    -fx-min-height: 50;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #8b5cf6;
+}
+
+.nav-button:hover {
+    -fx-background-color: #7c3aed;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.nav-button:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* Compact navigation button (for refresh button in GraphView) - PURPLE */
+.compact-nav-button {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 12;
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-cursor: hand;
+    -fx-min-width: 93;
+    -fx-min-height: 45;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2);
+    -fx-border-width: 0;
+    -fx-text-fill: white;
+    -fx-background-color: #8b5cf6;
+}
+
+.compact-nav-button:hover {
+    -fx-background-color: #7c3aed;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3);
+    -fx-scale-x: 1.02;
+    -fx-scale-y: 1.02;
+}
+
+.compact-nav-button:pressed {
+    -fx-opacity: 0.8;
+}
+
+/* ===== MODERN COMBOBOX ===== */
+
+.modern-combo {
+    -fx-background-color: rgba(139, 92, 246, 0.3);
+    -fx-border-color: rgba(255, 255, 255, 0.4);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 8 12;
+    -fx-font-size: 14px;
+    -fx-text-fill: white;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+}
+
+.modern-combo .list-cell {
+    -fx-text-fill: white;
+    -fx-background-color: transparent;
+}
+
+.modern-combo .arrow-button {
+    -fx-background-color: transparent;
+}
+
+.modern-combo .arrow {
+    -fx-background-color: rgba(255, 255, 255, 0.8);
+}
+
+.modern-combo .list-view {
+    -fx-background-color: rgba(139, 92, 246, 0.95);
+    -fx-border-color: rgba(255, 255, 255, 0.4);
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 5);
+}
+
+.modern-combo .list-view .list-cell {
+    -fx-background-color: transparent;
+    -fx-text-fill: white;
+    -fx-padding: 8 12;
+}
+
+.modern-combo .list-view .list-cell:hover {
+    -fx-background-color: rgba(255, 255, 255, 0.1);
+}
+
+.modern-combo .list-view .list-cell:selected {
+    -fx-background-color: rgba(255, 255, 255, 0.2);
+}
+
+/* ===== MODERN TEXTAREA ===== */
+
 .modern-textarea {
     -fx-background-color: rgba(255, 255, 255, 0.9);
     -fx-border-color: rgba(255, 255, 255, 0.3);
@@ -241,11 +374,12 @@
     -fx-background-color: white;
 }
 
-/* Modern labels with unified theme */
+/* ===== MODERN LABELS ===== */
+
 .modern-label {
     -fx-font-size: 20px;
     -fx-font-weight: bold;
-    -fx-text-fill: white !important;
+    -fx-text-fill: white;
 }
 
 .mood-status-label {
@@ -259,54 +393,8 @@
     -fx-border-color: rgba(255, 255, 255, 0.25);
 }
 
-/* Enhanced coaching container with unified theme - NO BACKGROUND, NO BORDER */
-.coaching-container {
-    -fx-background-color: transparent;
-    -fx-background-radius: 20;
-    -fx-border-radius: 20;
-    -fx-border-width: 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 20, 0, 0, 10);
-    -fx-padding: 24;
-}
+/* ===== STATUS INDICATORS ===== */
 
-.coaching-title {
-    -fx-font-size: 24px;
-    -fx-font-weight: bold;
-    -fx-text-fill: white;
-    -fx-padding: 0 0 16 0;
-}
-
-.coaching-content {
-    -fx-font-size: 16px;
-    -fx-text-fill: rgba(255, 255, 255, 0.9);
-    -fx-line-spacing: 8;
-    -fx-wrap-text: true;
-}
-
-.coaching-button {
-    -fx-background-color: linear-gradient(to bottom right, #8b5cf6, #7c3aed);
-    -fx-text-fill: white;
-    -fx-font-size: 18px;
-    -fx-font-weight: bold;
-    -fx-background-radius: 16;
-    -fx-padding: 20 40;
-    -fx-cursor: hand;
-    -fx-effect: dropshadow(gaussian, rgba(139, 92, 246, 0.4), 8, 0, 0, 3);
-    -fx-min-width: 200;
-    -fx-min-height: 56;
-}
-
-.coaching-button:hover {
-    -fx-background-color: #7c3aed;
-    -fx-effect: dropshadow(gaussian, rgba(139, 92, 246, 0.5), 12, 0, 0, 4);
-}
-
-.coaching-button:pressed {
-    -fx-background-color: #6d28d9;
-    -fx-opacity: 0.8;
-}
-
-/* Status indicators with unified purple theme - NO GREY */
 .status-label {
     -fx-font-size: 16px;
     -fx-font-weight: bold;
@@ -340,7 +428,8 @@
     -fx-border-color: rgba(139, 92, 246, 0.4);
 }
 
-/* Enhanced chart styling with unified theme - NO BACKGROUND, NO BORDER */
+/* ===== CHART STYLING ===== */
+
 .trend-chart {
     -fx-background-color: transparent;
     -fx-border-width: 0;
@@ -363,7 +452,7 @@
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 2, 0, 0, 1);
 }
 
-.trend-chart .axis .tick-label  {
+.trend-chart .axis .tick-label {
     -fx-font-size: 12px;
     -fx-fill: white;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.8), 2, 0, 0, 1);
@@ -414,64 +503,8 @@
     -fx-background-color: rgba(255, 255, 255, 0.1);
 }
 
-.trend-chart .axis .tick-label {
-    -fx-fill: white;  
-}
+/* ===== TABLE STYLING ===== */
 
-.y-axis .tick-label {
-    -fx-fill: white;
-}
-
-/* Additional comprehensive tick label selectors */
-.trend-chart .chart .axis .tick-label {
-    -fx-fill: white !important;
-}
-
-.trend-chart .chart .axis-label {
-    -fx-fill: white !important;
-}
-
-.trend-chart .chart .axis .axis-label {
-    -fx-fill: white !important;
-}
-
-/* Direct axis styling */
-.trend-chart .chart .x-axis .tick-label {
-    -fx-fill: white !important;
-}
-
-.trend-chart .chart .y-axis .tick-label {
-    -fx-fill: white !important;
-}
-
-/* NumberAxis specific styling */
-.trend-chart .chart .number-axis .tick-label {
-    -fx-fill: white !important;
-}
-
-.trend-chart .chart .number-axis .axis-label {
-    -fx-fill: white !important;
-}
-
-/* Broader chart text styling */
-.trend-chart .chart * {
-    -fx-text-fill: white;
-}
-
-.trend-chart .chart Text {
-    -fx-fill: white !important;
-}
-
-/* Force all text in chart to be white */
-.trend-chart .chart .axis Text {
-    -fx-fill: white !important;
-}
-
-.trend-chart .chart .axis .tick-mark Text {
-    -fx-fill: white !important;
-}
-
-/* Enhanced table styling with unified theme - NO BACKGROUND, NO BORDER */
 .history-table {
     -fx-background-color: transparent;
     -fx-border-width: 0;
@@ -512,64 +545,33 @@
     -fx-text-fill: white;
 }
 
-/* Modern delete button - BRIGHT RED */
+/* ===== DELETE BUTTON ===== */
+
 .delete-button {
-    -fx-background-color: #ef4444 !important;
-    -fx-text-fill: white !important;
-    -fx-font-size: 12px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 8 16 !important;
-    -fx-border-radius: 8 !important;
-    -fx-background-radius: 8 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 70 !important;
-    -fx-min-height: 32 !important;
-    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.4), 4, 0, 0, 2) !important;
+    -fx-background-color: #ef4444;
+    -fx-text-fill: white;
+    -fx-font-size: 12px;
+    -fx-font-weight: bold;
+    -fx-padding: 8 16;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-cursor: hand;
+    -fx-min-width: 70;
+    -fx-min-height: 32;
+    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.4), 4, 0, 0, 2);
 }
 
 .delete-button:hover {
-    -fx-background-color: #dc2626 !important;
-    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.5), 6, 0, 0, 3) !important;
+    -fx-background-color: #dc2626;
+    -fx-effect: dropshadow(gaussian, rgba(220, 38, 38, 0.5), 6, 0, 0, 3);
 }
 
 .delete-button:pressed {
-    -fx-background-color: #b91c1c !important;
-    -fx-opacity: 0.8 !important;
+    -fx-background-color: #b91c1c;
+    -fx-opacity: 0.8;
 }
 
-/* Loading and state indicators */
-.coaching-loading {
-    -fx-text-fill: #3b82f6;
-    -fx-font-style: italic;
-    -fx-font-weight: bold;
-}
-
-.coaching-success {
-    -fx-text-fill: #10b981;
-    -fx-font-weight: bold;
-}
-
-.coaching-error {
-    -fx-text-fill: #ef4444;
-    -fx-font-style: italic;
-    -fx-font-weight: bold;
-}
-
-/* Focus styles for accessibility */
-.modern-button:focused,
-.mood-button:focused {
-    -fx-border-color: rgba(255, 255, 255, 0.6);
-    -fx-border-width: 2;
-}
-
-/* Disabled states */
-.modern-button:disabled,
-.mood-button:disabled,
-.coaching-button:disabled {
-    -fx-opacity: 0.5;
-    -fx-cursor: default;
-    -fx-effect: none;
-}
+/* ===== UTILITIES ===== */
 
 /* Responsive spacing utilities */
 .spacing-xs { -fx-spacing: 8; }
@@ -585,179 +587,28 @@
 .padding-lg { -fx-padding: 32; }
 .padding-xl { -fx-padding: 48; }
 
-/* Modern form controls with unified purple theme - NO GREY */
-.modern-combo {
-    -fx-background-color: rgba(139, 92, 246, 0.3);
-    -fx-border-color: rgba(255, 255, 255, 0.4);
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
-    -fx-padding: 8 12;
-    -fx-font-size: 14px;
-    -fx-text-fill: white;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.1), 4, 0, 0, 2);
+/* ===== FOCUS AND DISABLED STATES ===== */
+
+.button:focused {
+    -fx-border-color: rgba(255, 255, 255, 0.6);
+    -fx-border-width: 2;
 }
 
-.modern-combo .list-cell {
-    -fx-text-fill: white;
-    -fx-background-color: transparent;
+.button:disabled {
+    -fx-opacity: 0.5;
+    -fx-cursor: default;
+    -fx-effect: none;
 }
 
-.modern-combo .arrow-button {
-    -fx-background-color: transparent;
-}
-
-.modern-combo .arrow {
-    -fx-background-color: rgba(255, 255, 255, 0.8);
-}
-
-.modern-combo .list-view {
-    -fx-background-color: rgba(139, 92, 246, 0.95);
-    -fx-border-color: rgba(255, 255, 255, 0.4);
-    -fx-border-radius: 8;
-    -fx-background-radius: 8;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 10, 0, 0, 5);
-}
-
-.modern-combo .list-view .list-cell {
-    -fx-background-color: transparent;
-    -fx-text-fill: white;
-    -fx-padding: 8 12;
-}
-
-.modern-combo .list-view .list-cell:hover {
-    -fx-background-color: rgba(255, 255, 255, 0.1);
-}
-
-.modern-combo .list-view .list-cell:selected {
-    -fx-background-color: rgba(255, 255, 255, 0.2);
-}
-
-/* Enhanced button variants - NO GREY - HIGH SPECIFICITY */
-.button.modern-button.info-button {
-    -fx-background-color: #06b6d4 !important;
-    -fx-effect: dropshadow(gaussian, rgba(6, 182, 212, 0.4), 8, 0, 0, 2) !important;
-}
-
-.button.modern-button.info-button:hover {
-    -fx-background-color: #0891b2 !important;
-    -fx-effect: dropshadow(gaussian, rgba(8, 145, 178, 0.5), 12, 0, 0, 4) !important;
-}
-
-/* Small button variant for refresh buttons */
-.button.modern-button.small-button {
-    -fx-font-size: 16px !important;
-    -fx-padding: 12 24 !important;
-    -fx-min-width: 120 !important;
-    -fx-min-height: 40 !important;
-    -fx-pref-width: 120 !important;
-    -fx-pref-height: 40 !important;
-}
-
-/* Smooth transitions for all interactive elements */
-/* Note: JavaFX doesn't support CSS transitions, animations are handled programmatically */
-
-
-
-/* Responsive design utilities */
-.responsive-text {
-    -fx-font-size: 16px;
-}
-
-.responsive-title {
-    -fx-font-size: 32px;
-}
+/* ===== TEXT STYLING ===== */
 
 /* Ensure all text in the app is white by default */
 Label {
-    -fx-text-fill: white !important;
+    -fx-text-fill: white;
 }
 
 Text {
-    -fx-fill: white !important;
-}
-
-/* Enhanced accessibility */
-.button.modern-button:focused,
-.button.mood-button:focused,
-.modern-combo:focused {
-    -fx-border-color: rgba(255, 255, 255, 0.6) !important;
-    -fx-border-width: 2 !important;
-    -fx-effect: dropshadow(gaussian, rgba(255, 255, 255, 0.3), 8, 0, 0, 3) !important;
-}
-
-/* Container-specific button styling to ensure all buttons get proper sizing */
-.glass-card .button,
-.main-container .button,
-.history-table .button {
-    -fx-font-size: 18px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 16 32 !important;
-    -fx-background-radius: 12 !important;
-    -fx-border-radius: 12 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 150 !important;
-    -fx-min-height: 50 !important;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2) !important;
-    -fx-border-width: 0 !important;
-    -fx-text-fill: white !important;
-    /* Remove background color to allow specific button classes to work */
-}
-
-/* TEST ID SELECTOR - This should definitely work if CSS is loaded */
-#logMoodBtn {
-    -fx-background-color: #22c55e !important;
-    -fx-text-fill: white !important;
-}
-
-#viewHistoryBtn {
-    -fx-background-color: #8b5cf6 !important;
-    -fx-text-fill: white !important;
-}
-
-/* Additional button styling to catch any missed buttons */
-.button {
-    -fx-font-size: 18px !important;
-    -fx-font-weight: bold !important;
-    -fx-padding: 16 32 !important;
-    -fx-background-radius: 12 !important;
-    -fx-border-radius: 12 !important;
-    -fx-cursor: hand !important;
-    -fx-min-width: 150 !important;
-    -fx-min-height: 50 !important;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.2), 4, 0, 0, 2) !important;
-    -fx-border-width: 0 !important;
-    -fx-text-fill: white !important;
-    -fx-background-color: #8b5cf6 !important;  /* purple base */
-}
-
-.button:hover {
-    /* Remove background color to allow specific button classes to work */
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.3), 6, 0, 0, 3) !important;
-    -fx-scale-x: 1.02 !important;
-    -fx-scale-y: 1.02 !important;
-}
-
-.button:pressed {
-    -fx-opacity: 0.8 !important;
-}
-
-/* Loading states */
-.loading {
-    -fx-opacity: 0.7;
-    -fx-cursor: wait;
-}
-
-/* Success and error states with animations */
-.success-state {
-    -fx-background-color: rgba(16, 185, 129, 0.2);
-    -fx-border-color: rgba(16, 185, 129, 0.4);
-    -fx-effect: dropshadow(gaussian, rgba(16, 185, 129, 0.3), 8, 0, 0, 4);
-}
-
-.error-state {
-    -fx-background-color: rgba(239, 68, 68, 0.2);
-    -fx-border-color: rgba(239, 68, 68, 0.4);
-    -fx-effect: dropshadow(gaussian, rgba(239, 68, 68, 0.3), 8, 0, 0, 4);
+    -fx-fill: white;
 }
 
 

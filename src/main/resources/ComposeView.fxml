@@ -22,13 +22,13 @@
         <HBox spacing="24" alignment="CENTER">
             <Button text="😊 Happy" 
                     onAction="#onHappy" 
-                    styleClass="button mood-button happy-button"/>
+                    styleClass="happy-button"/>
             <Button text="😐 Neutral" 
                     onAction="#onNeutral" 
-                    styleClass="button mood-button neutral-button"/>
+                    styleClass="neutral-button"/>
             <Button text="😔 Sad" 
                     onAction="#onSad" 
-                    styleClass="button mood-button sad-button"/>
+                    styleClass="sad-button"/>
         </HBox>
         
         <Label fx:id="selectedMoodLabel" 
@@ -52,11 +52,11 @@
             <Button fx:id="saveBtn" 
                     text="💾 Save Mood" 
                     onAction="#onSave" 
-                    styleClass="modern-button success-button"/>
+                    styleClass="success-button"/>
             <Button fx:id="cancelBtn" 
                     text="❌ Cancel" 
                     onAction="#onCancel" 
-                    styleClass="modern-button danger-button"/>
+                    styleClass="danger-button"/>
         </HBox>
     </VBox>
 </VBox>
