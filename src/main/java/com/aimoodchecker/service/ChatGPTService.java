@@ -25,23 +25,31 @@ public class ChatGPTService {
     }
     
     /**
-     * Provides intelligent mood coaching based on user's mood history and current state
-     * @param currentMood The user's current mood type (Happy, Neutral, Sad)
-     * @param currentDescription The user's current mood description
-     * @param entryRepository The repository to get mood patterns from
-     * @return Personalized mood coaching suggestions
+     * Provides intelligent mood coaching based on user's mood history and current state.
+     * This overload fetches mood patterns from the repository (normal app path).
      */
     public String getMoodCoaching(String currentMood, String currentDescription, EntryRepository entryRepository) {
+        try {
+            MoodPatterns moodPatterns = entryRepository.getMoodPatterns();
+            return getMoodCoaching(currentMood, currentDescription, moodPatterns);
+        } catch (Exception e) {
+            System.err.println("Error getting mood coaching: " + e.getMessage());
+            return "I'm having trouble analyzing your mood patterns right now. Please try again later.";
+        }
+    }
+
+    /**
+     * Provides intelligent mood coaching given pre-computed mood patterns.
+     * This is useful for testing HTTP latency without requiring a live database.
+     */
+    public String getMoodCoaching(String currentMood, String currentDescription, MoodPatterns moodPatterns) {
         String apiKey = APIConfig.getOpenAIKey();
         
         try {
-            // Get comprehensive mood patterns from repository
-            MoodPatterns moodPatterns = entryRepository.getMoodPatterns();
-            
             // Create the coaching request body with enhanced data
             String requestBody = createEnhancedCoachingRequest(currentMood, currentDescription, moodPatterns);
             
-            // Build HTTP request
+            
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(OPENAI_API_URL))
                     .header("Content-Type", "application/json")
@@ -50,7 +58,11 @@ public class ChatGPTService {
                     .timeout(Duration.ofSeconds(30))
                     .build();
             
+            long start = System.nanoTime();
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            long end = System.nanoTime();
+            long durationMs = (end - start) / 1_000_000;
+            System.out.println("AI coaching HTTP call completed in " + durationMs + " ms with status " + response.statusCode());
             
             if (response.statusCode() == 200) {
                 return parseChatGPTResponse(response.body());
@@ -65,9 +77,7 @@ public class ChatGPTService {
         }
     }
 
-    /**
-     * Creates the enhanced JSON request body for mood coaching with comprehensive pattern data
-     */
+
     private String createEnhancedCoachingRequest(String currentMood, String currentDescription, MoodPatterns moodPatterns) {
         return """
             {
@@ -100,7 +110,7 @@ public class ChatGPTService {
      */
     private String parseChatGPTResponse(String responseBody) {
         try {
-            // Simple JSON parsing without external libraries
+
             String content = extractContentFromResponse(responseBody);
             
             if (content != null && !content.trim().isEmpty()) {
@@ -118,7 +128,7 @@ public class ChatGPTService {
      */
     private String extractContentFromResponse(String responseBody) {
         try {
-            // Look for the content field in the JSON response
+            
             int contentIndex = responseBody.indexOf("\"content\":");
             if (contentIndex == -1) {
                 return null;

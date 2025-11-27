@@ -46,6 +46,7 @@ public class Main extends Application {
             e.printStackTrace();
             throw e;
                   
+            
         }
     }
 
