@@ -1,67 +1,34 @@
 package com.aimoodchecker.dao;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 
-/**
- * Database connection utility class for SQLite
- */
-public class DBConnection {
-    
-    private static final String DB_URL = "jdbc:sqlite:mood.db";
-    private static Connection connection = null;
-    
-    /**
-     * Opens a connection to the SQLite database
-     * @return Connection object
-     * @throws SQLException if connection fails
-     */
+/** Each caller owns its connection and closes it with try-with-resources. */
+public final class DBConnection {
+    private DBConnection() {}
     public static Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            try {
-                // Load SQLite JDBC driver
-                Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection(DB_URL);
-                System.out.println("Database connection established successfully");
-            } catch (ClassNotFoundException e) {
-                throw new SQLException("SQLite JDBC driver not found", e);
-            }
-        }
-        return connection;
-    }
-    
-    /**
-     * Closes the database connection
-     */
-    public static void closeConnection() {
-        if (connection != null) {
-            try {
-                connection.close();
-                System.out.println("Database connection closed successfully");
-            } catch (SQLException e) {
-                System.err.println("Error closing database connection: " + e.getMessage());
-            }
-        }
-    }
-    
-    /**
-     * Checks if the database connection is valid
-     * @return true if connection is valid, false otherwise
-     */
-    public static boolean isConnectionValid() {
         try {
-            return connection != null && !connection.isClosed() && connection.isValid(5);
-        } catch (SQLException e) {
-            return false;
+            Class.forName("org.sqlite.JDBC");
+            Path directory = Path.of(System.getProperty("aimoodchecker.dataDir", ".")).toAbsolutePath().normalize();
+            Files.createDirectories(directory);
+            Connection connection = DriverManager.getConnection("jdbc:sqlite:" + directory.resolve("mood.db"));
+            try (Statement statement = connection.createStatement()) { statement.execute("PRAGMA busy_timeout=5000"); }
+            catch (SQLException error) { connection.close(); throw error; }
+            return connection;
+        } catch (ClassNotFoundException | java.io.IOException error) {
+            throw new SQLException("The local journal could not be opened.", error);
         }
     }
-    
-    /**
-     * Initialize database schema (creates tables if they don't exist)
-     * This is called once when the application starts
-     */
+    /** Retained for callers from older versions; connections are now caller-owned. */
+    public static void closeConnection() {}
+    public static boolean isConnectionValid() {
+        try (Connection connection = getConnection()) { return connection.isValid(5); }
+        catch (SQLException error) { return false; }
+    }
     public static void initDatabase() {
         String ddl = """
             CREATE TABLE IF NOT EXISTS mood_entries (
@@ -73,14 +40,7 @@ public class DBConnection {
                 created_at TEXT DEFAULT CURRENT_TIMESTAMP
             );
             """;
-            
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute(ddl);
-            System.out.println("Database schema initialized successfully");
-        } catch (SQLException e) {
-            System.err.println("Error initializing database schema: " + e.getMessage());
-            e.printStackTrace();
-        }
+        try (Connection connection = getConnection(); Statement statement = connection.createStatement()) { statement.execute(ddl); }
+        catch (SQLException error) { throw new IllegalStateException("The local journal could not be initialized.", error); }
     }
 }

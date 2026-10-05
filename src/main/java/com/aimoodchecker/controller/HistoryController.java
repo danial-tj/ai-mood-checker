@@ -1,203 +1,118 @@
 package com.aimoodchecker.controller;
 
 import javafx.fxml.FXML;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.Label;
-import javafx.scene.control.Button;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.input.KeyCode;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import com.aimoodchecker.repository.EntryRepository;
 import com.aimoodchecker.model.MoodEntry;
 import com.aimoodchecker.service.SentimentService;
 import com.aimoodchecker.service.ChatGPTService;
 import java.sql.SQLException;
-import java.util.List;
-import javafx.scene.control.TableCell;
 
 public class HistoryController implements RoutedController, NeedsDeps {
-    
     private AppController app;
     private EntryRepository entryRepository;
-    
     @FXML private TableView<MoodEntry> historyTable;
-    @FXML private TableColumn<MoodEntry, String> dateColumn;
-    @FXML private TableColumn<MoodEntry, String> moodColumn;
-    @FXML private TableColumn<MoodEntry, String> descriptionColumn;
-    @FXML private TableColumn<MoodEntry, String> sentimentColumn;
+    @FXML private TableColumn<MoodEntry, String> dateColumn, moodColumn, descriptionColumn, sentimentColumn;
     @FXML private TableColumn<MoodEntry, Void> actionsColumn;
-    @FXML private Label noDataLabel;
+    @FXML private Label noDataLabel, entryCount;
 
-    @FXML
-    private void initialize() {
-        // Set up the TableView columns
+    @FXML private void initialize() {
         dateColumn.setCellValueFactory(new PropertyValueFactory<>("formattedDate"));
         moodColumn.setCellValueFactory(new PropertyValueFactory<>("moodType"));
         descriptionColumn.setCellValueFactory(new PropertyValueFactory<>("description"));
         sentimentColumn.setCellValueFactory(new PropertyValueFactory<>("sentimentCategory"));
-        
-        // Set up the actions column with delete buttons
-        actionsColumn.setCellFactory(param -> new TableCell<MoodEntry, Void>() {
-            private final Button deleteButton = new Button("🗑");
-            
+        historyTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
+        historyTable.setPlaceholder(new Label("No reflections yet"));
+        historyTable.setAccessibleText("Your mood journal. Select an entry and press Enter to read it.");
+        historyTable.setRowFactory(table -> {
+            TableRow<MoodEntry> row = new TableRow<>();
+            row.setOnMouseClicked(event -> {
+                if (event.getClickCount() == 2 && !row.isEmpty()) showEntry(row.getItem());
+            });
+            return row;
+        });
+        historyTable.setOnKeyPressed(event -> {
+            if (event.getCode() == KeyCode.ENTER && historyTable.getSelectionModel().getSelectedItem() != null) {
+                showEntry(historyTable.getSelectionModel().getSelectedItem());
+                event.consume();
+            }
+        });
+        actionsColumn.setCellFactory(column -> new TableCell<>() {
+            private final Button delete = new Button("Delete");
             {
-                deleteButton.getStyleClass().add("delete-button");
-                deleteButton.setOnAction(event -> {
-                    MoodEntry entry = getTableView().getItems().get(getIndex());
-                    if (entry != null) {
-                        deleteMoodEntry(entry);
-                    }
+                delete.getStyleClass().add("delete-button");
+                delete.setOnAction(event -> {
+                    if (getTableRow() != null && getTableRow().getItem() != null) deleteMoodEntry(getTableRow().getItem());
+                    event.consume();
                 });
             }
-            
-            @Override
-            protected void updateItem(Void item, boolean empty) {
+            @Override protected void updateItem(Void item, boolean empty) {
                 super.updateItem(item, empty);
-                if (empty) {
-                    setGraphic(null);
-                } else {
-                    setGraphic(deleteButton);
-                }
+                if (!empty && getTableRow() != null && getTableRow().getItem() != null)
+                    delete.setAccessibleText("Delete check-in from " + getTableRow().getItem().getFormattedDate());
+                setGraphic(empty ? null : delete);
             }
         });
     }
-    
-    @Override
-    public void setApp(AppController app) {
-        this.app = app;
-        // Load mood history when this view is opened
-        loadMoodHistory();
-    }
+    @Override public void setApp(AppController app) { this.app = app; loadMoodHistory(); }
+    @Override public void init(EntryRepository repo, SentimentService sentiment, ChatGPTService chatGPT) { entryRepository = repo; }
+    @FXML private void onRefresh() { loadMoodHistory(); }
 
-    @Override
-    public void init(EntryRepository repo, SentimentService sentiment, ChatGPTService chatGPT) {
-        this.entryRepository = repo;
-    }
-
-    @FXML
-    private void onRefresh() {
-        // Load and display mood history data
-        loadMoodHistory();
-        app.setStatus("History refreshed");
-    }
-    
-    /**
-     * Loads mood history from the database and displays it in the TableView
-     */
     private void loadMoodHistory() {
         try {
-            // Use repository to get all mood entries
-            List<MoodEntry> moodEntries = entryRepository.getAllMoodEntries();
-            
-            System.out.println("=== Loading Mood History ===");
-            
-            for (MoodEntry entry : moodEntries) {
-                System.out.println("ID: " + entry.getId() + 
-                                 " | Date: " + entry.getDate() + 
-                                 " | Mood: " + entry.getMoodType() + 
-                                 " | Description: " + entry.getDescription() + 
-                                 " | Sentiment Score: " + entry.getSentimentScore());
-            }
-            
-            System.out.println("=== End of Mood History ===");
-            
-            // Convert to ObservableList for TableView
-            ObservableList<MoodEntry> observableEntries = FXCollections.observableArrayList(moodEntries);
-            historyTable.setItems(observableEntries);
-            
-            // Update UI based on data availability
-            if (moodEntries.isEmpty()) {
-                noDataLabel.setVisible(true);
-                historyTable.setVisible(false);
-                if (app != null) {
-                    app.setStatus("No mood entries found");
-                }
-            } else {
-                noDataLabel.setVisible(false);
-                historyTable.setVisible(true);
-                if (app != null) {
-                    app.setStatus("Loaded " + moodEntries.size() + " mood entries");
-                }
-            }
-            
-        } catch (SQLException e) {
-            System.err.println("Error loading mood history: " + e.getMessage());
-            e.printStackTrace();
-            
-            // Show error in UI
-            noDataLabel.setText("Error loading mood history: " + e.getMessage());
+            var entries = entryRepository.getAllMoodEntries();
+            historyTable.setItems(FXCollections.observableArrayList(entries));
+            noDataLabel.setText("Your story starts here.\nAdd a daily check-in to begin your journal.");
+            noDataLabel.setVisible(entries.isEmpty());
+            historyTable.setVisible(!entries.isEmpty());
+            entryCount.setText(entries.size() + (entries.size() == 1 ? " reflection" : " reflections"));
+            app.setStatus(entries.isEmpty() ? "Your journal is ready for your first check-in" : entries.size() + " check-ins in your journal");
+        } catch (SQLException error) {
+            noDataLabel.setText("Your journal couldn't load.\nTry Refresh to open it again.");
             noDataLabel.setVisible(true);
             historyTable.setVisible(false);
-            
-            if (app != null) {
-                app.setStatus("Error loading mood history");
-            }
+            app.setStatus("Journal unavailable. Please try Refresh.");
         }
     }
 
-    /**
-     * Deletes a mood entry after user confirmation
-     */
+    private void showEntry(MoodEntry entry) {
+        Alert dialog = new Alert(Alert.AlertType.INFORMATION);
+        dialog.setTitle("Your journal");
+        dialog.setHeaderText(entry.getMoodType() + "  ·  " + entry.getFormattedDate());
+        TextArea words = new TextArea(entry.getDescription());
+        words.setEditable(false);
+        words.setWrapText(true);
+        words.setPrefRowCount(10);
+        words.setPrefColumnCount(50);
+        words.getStyleClass().add("journal-input");
+        dialog.getDialogPane().setContent(words);
+        app.styleDialog(dialog);
+        dialog.showAndWait();
+    }
+
     private void deleteMoodEntry(MoodEntry entry) {
-        // Show confirmation dialog
-        Alert alert = new Alert(AlertType.CONFIRMATION);
-        alert.setTitle("Delete Mood Entry");
-        alert.setHeaderText("Are you sure you want to delete this mood entry?");
-        alert.setContentText("Date: " + entry.getFormattedDate() + "\n" +
-                           "Mood: " + entry.getMoodType() + "\n" +
-                           "Description: " + entry.getDescription() + "\n\n" +
-                           "This action cannot be undone.");
-        
-        alert.showAndWait().ifPresent(response -> {
-            if (response == javafx.scene.control.ButtonType.OK) {
-                try {
-                    // Delete from database using repository
-                    entryRepository.deleteMoodEntry(entry.getId());
-                    
-                    // Show success message
-                    Alert successAlert = new Alert(AlertType.INFORMATION);
-                    successAlert.setTitle("Success");
-                    successAlert.setHeaderText("Mood Entry Deleted");
-                    successAlert.setContentText("The mood entry has been successfully deleted.");
-                    successAlert.showAndWait();
-                    
-                    // Refresh the table
-                    loadMoodHistory();
-                    
-                    // Update app status
-                    if (app != null) {
-                        app.setStatus("Mood entry deleted successfully");
-                    }
-                    
-                } catch (SQLException e) {
-                    // Show error message
-                    Alert errorAlert = new Alert(AlertType.ERROR);
-                    errorAlert.setTitle("Error");
-                    errorAlert.setHeaderText("Failed to Delete Entry");
-                    errorAlert.setContentText("An error occurred while deleting the mood entry:\n" + e.getMessage());
-                    errorAlert.showAndWait();
-                    
-                    System.err.println("Error deleting mood entry: " + e.getMessage());
-                    e.printStackTrace();
-                    
-                    if (app != null) {
-                        app.setStatus("Error deleting mood entry");
-                    }
-                }
-            }
-        });
+        Alert dialog = new Alert(Alert.AlertType.CONFIRMATION);
+        dialog.setTitle("Delete check-in");
+        dialog.setHeaderText("Delete this reflection?");
+        dialog.setContentText(entry.getMoodType() + " · " + entry.getFormattedDate() + "\nThis will permanently remove this entry from your journal.");
+        ButtonType cancel = new ButtonType("Keep entry", ButtonBar.ButtonData.CANCEL_CLOSE);
+        ButtonType delete = new ButtonType("Delete entry", ButtonBar.ButtonData.OK_DONE);
+        dialog.getButtonTypes().setAll(cancel, delete);
+        app.styleDialog(dialog);
+        if (dialog.showAndWait().orElse(cancel) != delete) return;
+        try {
+            entryRepository.deleteMoodEntry(entry.getId());
+            loadMoodHistory();
+            app.setStatus("Check-in deleted");
+        } catch (SQLException error) {
+            Alert failure = new Alert(Alert.AlertType.ERROR, "The entry couldn't be deleted. Please try again.");
+            failure.setHeaderText("Your entry is still in your journal");
+            app.styleDialog(failure);
+            failure.showAndWait();
+        }
     }
-
-    @FXML
-    private void onBackHome() {
-        app.goHome();
-    }
-
-    @FXML
-    private void onViewGraph() {
-        app.goGraph();
-    }
+    @FXML private void onViewGraph() { app.goGraph(); }
 }

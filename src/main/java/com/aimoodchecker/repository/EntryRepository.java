@@ -2,7 +2,7 @@ package com.aimoodchecker.repository;
 
 import com.aimoodchecker.model.MoodEntry;
 import com.aimoodchecker.dao.DBConnection;
-import com.aimoodchecker.service.ChatGPTService;
+import com.aimoodchecker.service.SentimentService;
 
 import java.sql.*;
 import java.time.LocalDate;
@@ -13,18 +13,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class EntryRepository {
-    private static EntryRepository instance;
+    private static final EntryRepository INSTANCE = new EntryRepository();
+    private static final SentimentService SENTIMENT = new SentimentService();
     
     private EntryRepository() {
         // No ChatGPTService instantiation here to avoid circular dependency
     }
     
-    public static EntryRepository getInstance() {
-        if (instance == null) {
-            instance = new EntryRepository();
-        }
-        return instance;
-    }
+    public static EntryRepository getInstance() { return INSTANCE; }
     
     // ===== CREATE OPERATIONS =====
     
@@ -40,7 +36,7 @@ public class EntryRepository {
             pstmt.setString(1, LocalDate.now().toString());
             pstmt.setString(2, moodType);
             pstmt.setString(3, description);
-            pstmt.setDouble(4, new ChatGPTService().getSentimentScore(description));
+            pstmt.setDouble(4, SENTIMENT.analyzeSentiment(description));
             
             int rowsAffected = pstmt.executeUpdate();
             if (rowsAffected == 0) {
@@ -56,7 +52,7 @@ public class EntryRepository {
      */
     public List<MoodEntry> getAllMoodEntries() throws SQLException {
         List<MoodEntry> entries = new ArrayList<>();
-        String sql = "SELECT * FROM mood_entries ORDER BY date DESC, created_at DESC";
+        String sql = "SELECT * FROM mood_entries ORDER BY date DESC, created_at DESC, id DESC";
         
         try (Connection conn = DBConnection.getConnection();
              Statement stmt = conn.createStatement();
@@ -74,7 +70,7 @@ public class EntryRepository {
      */
     public List<MoodEntry> getMoodEntriesForDateRange(LocalDate startDate, LocalDate endDate) throws SQLException {
         List<MoodEntry> entries = new ArrayList<>();
-        String sql = "SELECT * FROM mood_entries WHERE date BETWEEN ? AND ? ORDER BY date DESC, created_at DESC";
+        String sql = "SELECT * FROM mood_entries WHERE date BETWEEN ? AND ? ORDER BY date DESC, created_at DESC, id DESC";
         
         try (Connection conn = DBConnection.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -98,26 +94,8 @@ public class EntryRepository {
         LocalDate endDate = LocalDate.now();
         LocalDate startDate = endDate.minusDays(days - 1);
         
-        System.out.println("=== Database Query Debug ===");
-        System.out.println("Querying for entries from " + startDate + " to " + endDate);
-        System.out.println("Start date epoch: " + startDate.toEpochDay());
-        System.out.println("End date epoch: " + endDate.toEpochDay());
-        
-        List<MoodEntry> entries = getMoodEntriesForDateRange(startDate, endDate);
-        
-        System.out.println("Database returned " + entries.size() + " entries");
-        if (!entries.isEmpty()) {
-            System.out.println("Sample entries:");
-            for (int i = 0; i < Math.min(3, entries.size()); i++) {
-                MoodEntry entry = entries.get(i);
-                System.out.println("  Entry " + i + ": Date=" + entry.getDate() + 
-                                 " | Mood=" + entry.getMoodType() + 
-                                 " | AI Score=" + entry.getSentimentScore());
-            }
-        }
-        System.out.println("=== End Database Query Debug ===");
-        
-        return entries;
+        if (days < 1) throw new IllegalArgumentException("days must be positive");
+        return getMoodEntriesForDateRange(startDate, endDate);
     }
     
     /**
@@ -153,7 +131,7 @@ public class EntryRepository {
             
             pstmt.setString(1, moodType);
             pstmt.setString(2, description);
-            pstmt.setDouble(3, new ChatGPTService().getSentimentScore(description));
+            pstmt.setDouble(3, SENTIMENT.analyzeSentiment(description));
             pstmt.setInt(4, id);
             
             int rowsAffected = pstmt.executeUpdate();
@@ -189,74 +167,17 @@ public class EntryRepository {
      * Get daily averages for mood and AI sentiment over a specified period
      */
     public List<TrendPoint> findDailyAverages(int days) throws SQLException {
-        List<TrendPoint> trendPoints = new ArrayList<>();
-        
-        // Get entries for the last N days
-        List<MoodEntry> entries = getMoodEntriesForLastDays(days);
-        
-        if (entries.isEmpty()) {
-            System.out.println("No entries found for trend analysis");
-            return trendPoints;
-        }
-        
-        System.out.println("=== Trend Analysis Debug ===");
-        System.out.println("Total entries found: " + entries.size());
-        System.out.println("Requested days: " + days);
-        
-        // Group entries by date using a Map
-        Map<LocalDate, List<MoodEntry>> entriesByDate = entries.stream()
+        Map<LocalDate, List<MoodEntry>> byDate = getMoodEntriesForLastDays(days).stream()
+            .filter(entry -> entry.getDate() != null)
             .collect(Collectors.groupingBy(MoodEntry::getDate));
-        
-        System.out.println("Unique dates with entries: " + entriesByDate.size());
-        
-        // Calculate averages for each date that has entries
-        for (Map.Entry<LocalDate, List<MoodEntry>> entry : entriesByDate.entrySet()) {
-            LocalDate date = entry.getKey();
-            List<MoodEntry> dayEntries = entry.getValue();
-            
-            System.out.println("Date: " + date + " - Entries: " + dayEntries.size());
-            
-            if (!dayEntries.isEmpty()) {
-                // Calculate average mood score for this date
-                double avgMood = dayEntries.stream()
-                    .mapToDouble(moodEntry -> moodTypeToScore(moodEntry.getMoodType()))
-                    .average()
-                    .orElse(0.0);
-                
-                // Calculate average AI sentiment score for this date
-                double avgAi = dayEntries.stream()
-                    .mapToDouble(moodEntry -> moodEntry.getSentimentScore() != null ? moodEntry.getSentimentScore() : 0.0)
-                    .average()
-                    .orElse(0.0);
-                
-                System.out.println("  → Avg Mood: " + avgMood + " (raw: " + avgMood + ")");
-                System.out.println("  → Avg AI: " + avgAi);
-                
-                trendPoints.add(new TrendPoint(date, avgMood, avgAi));
-            }
+        List<TrendPoint> points = new ArrayList<>();
+        for (var day : byDate.entrySet()) {
+            double mood = day.getValue().stream().mapToDouble(entry -> moodTypeToScore(entry.getMoodType())).average().orElse(3.0);
+            var tone = day.getValue().stream().map(MoodEntry::getSentimentScore).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue).average();
+            points.add(new TrendPoint(day.getKey(), mood, tone.isPresent() ? tone.getAsDouble() : null));
         }
-        
-        // Sort by date (oldest first for chart)
-        trendPoints.sort((a, b) -> a.date().compareTo(b.date()));
-        
-        System.out.println("Trend points created: " + trendPoints.size());
-        
-        // Additional debugging: show the actual trend points
-        if (!trendPoints.isEmpty()) {
-            System.out.println("=== Trend Points Details ===");
-            for (int i = 0; i < trendPoints.size(); i++) {
-                TrendPoint point = trendPoints.get(i);
-                System.out.println("Point " + i + ": Date=" + point.date() + 
-                                 " | Mood=" + point.avgMood() + 
-                                 " | AI=" + point.avgAi() + 
-                                 " | Epoch=" + point.date().toEpochDay());
-            }
-            System.out.println("=== End Trend Points Details ===");
-        }
-        
-        System.out.println("=== End Trend Analysis ===");
-        
-        return trendPoints;
+        points.sort(java.util.Comparator.comparing(TrendPoint::date));
+        return points;
     }
     
     /**
@@ -279,7 +200,7 @@ public class EntryRepository {
             .orElse(0.0);
         
         double avgSentimentScore = entries.stream()
-            .mapToDouble(e -> e.getSentimentScore() != null ? e.getSentimentScore() : 0.0)
+            .map(MoodEntry::getSentimentScore).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue)
             .average()
             .orElse(0.0);
         
@@ -309,7 +230,7 @@ public class EntryRepository {
             .orElse(0.0);
         
         double avgSentimentScore = allEntries.stream()
-            .mapToDouble(e -> e.getSentimentScore() != null ? e.getSentimentScore() : 0.0)
+            .map(MoodEntry::getSentimentScore).filter(java.util.Objects::nonNull).mapToDouble(Double::doubleValue)
             .average()
             .orElse(0.0);
         
@@ -373,14 +294,15 @@ public class EntryRepository {
         String dateStr = rs.getString("date");
         String moodType = rs.getString("mood_type");
         String description = rs.getString("description");
-        Double sentimentScore = rs.getDouble("sentiment_score");
+        double rawSentiment = rs.getDouble("sentiment_score");
+        Double sentimentScore = rs.wasNull() ? null : rawSentiment;
         String createdAt = rs.getString("created_at");
         
         LocalDate date = null;
         try {
             date = LocalDate.parse(dateStr);
         } catch (Exception e) {
-            System.err.println("Error parsing date: " + dateStr);
+            // Keep the journal row readable; unavailable dates are omitted from trends.
         }
         
         return new MoodEntry(id, date, moodType, description, sentimentScore, createdAt);

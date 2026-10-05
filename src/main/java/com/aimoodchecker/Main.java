@@ -25,7 +25,7 @@ public class Main extends Application {
 
             Parent root = loader.load();
             
-            Scene scene = new Scene(root,960,600);
+            Scene scene = new Scene(root,1180,820);
             
             // Load CSS
             var css = getClass().getResource("/styles.css");
@@ -39,6 +39,10 @@ public class Main extends Application {
             // Set up the stage
             stage.setTitle("AI Mood Checker");
             stage.setScene(scene);
+            stage.setMinWidth(920);
+            stage.setMinHeight(680);
+            var controller = (com.aimoodchecker.controller.AppController) loader.getController();
+            stage.setOnCloseRequest(event -> { if (!controller.canLeave()) event.consume(); });
             stage.show();
             System.out.println("Application started successfully");
         } catch (Exception e) {

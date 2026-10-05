@@ -1,128 +1,51 @@
-# AI Mood Checker 📊
+# AI Mood Checker
 
-A JavaFX-based desktop application for tracking and analyzing your daily mood patterns. Built with modern Java technologies and a clean, intuitive user interface.
+A Windows JavaFX desktop journal with three mood choices, saved reflections, history, and mood/tone trends. Check-ins and the keyword-based tone estimate work locally. AI reflections are optional and require your own API configuration.
 
-## Features
+## Use the packaged application
 
-- **🎭 Mood Logging**: Quick mood selection (Happy, Neutral, Sad) with detailed text descriptions
-- **📅 History Tracking**: View your mood entries over time in an organized table
-- **🔄 Dynamic Navigation**: Seamless switching between different views
-- **💾 Data Persistence**: SQLite database for storing mood entries
-- **🎨 Modern UI**: Clean, responsive JavaFX interface with custom styling
+Extract the entire `AIMoodChecker-Windows-x64.zip` archive, then open `AIMoodChecker/AIMoodChecker.exe`. Keep the `app` and `runtime` folders beside the executable. Java and JavaFX are bundled; a separate SDK installation is not required.
 
-## 🏗️ Architecture
+The packaged application stores `mood.db` in `%LOCALAPPDATA%\AIMoodChecker`. It does not overwrite or automatically import the development repository's journal. To use an existing journal, close the app, back up that journal, and launch the executable with `--data-dir "C:\path\to\the\existing\journal-folder"`. The folder must be writable. `--offline` disables remote AI reflections explicitly.
 
-- **Frontend**: JavaFX with FXML for UI layout
-- **Backend**: Java 17+ with modular architecture
-- **Database**: SQLite for local data storage
-- **Pattern**: MVC (Model-View-Controller) with dependency injection
+This is an unsigned local app image, not a signed installer. Native Windows keyboard/screen-reader and double-click launcher checks still need to be completed on an interactive desktop before public distribution.
 
-## 🚀 Getting Started
+## Optional AI reflections
 
-### Prerequisites
+Without an API key, saving a check-in still works and the app explains that AI reflections are not configured. With a key, saving sends the current mood, current reflection, and aggregate mood counts to the configured OpenAI chat-completions model. API usage can incur charges. Historical reflection text is not included in that request.
 
-- **Java 24** (JDK 24 recommended)
-- **JavaFX SDK 24.0.2** (included in project setup)
-- **Maven** (for dependency management)
+Provide `OPENAI_API_KEY` in the process environment, or create `config.properties` in the journal data folder containing `openai.api.key=YOUR_KEY`. The same folder may contain a `.env` file with `OPENAI_API_KEY=YOUR_KEY`. Configuration files and database files must remain outside source control and release archives. Optional properties are `openai.model`, `openai.max.tokens`, and `openai.temperature`; the existing defaults remain `gpt-3.5-turbo`, `1200`, and `0.8`. Availability of that remote model was not tested during offline release verification.
 
-### Installation
+The text-tone line is a small local keyword heuristic. It can misunderstand context; it is not an AI or clinical assessment. Missing legacy scores remain unknown rather than appearing negative.
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/ai-mood-checker.git
-   cd ai-mood-checker
-   ```
+## Build from source on Windows
 
-2. **Download JavaFX SDK**
-   - Download from: https://openjfx.io/
-   - Extract to: `C:\Program Files (x86)\openjfx-24.0.2_windows-x64_bin-sdk\`
+Requirements: JDK 24 or newer, PowerShell, and the Maven dependencies declared in `pom.xml`. Set `JAVA_HOME` to the JDK, or pass `-JdkHome` to the scripts. The scripts also detect the standard local `C:\Program Files\Java\jdk-24` installation.
 
-3. **Compile and Run**
-   ```bash
-   # Compile
-   javac -cp "C:\Program Files (x86)\openjfx-24.0.2_windows-x64_bin-sdk\javafx-sdk-24.0.2\lib\*" -d target/classes src/main/java/com/aimoodchecker/*.java src/main/java/com/aimoodchecker/controller/*.java src/main/java/com/aimoodchecker/dao/*.java src/main/java/com/aimoodchecker/service/*.java src/main/java/com/aimoodchecker/repository/*.java
+If dependencies are absent, use Maven to populate the local cache:
 
-   # Run
-   java --module-path "C:\Program Files (x86)\openjfx-24.0.2_windows-x64_bin-sdk\javafx-sdk-24.0.2\lib" --add-modules javafx.controls,javafx.fxml -cp target/classes com.aimoodchecker.Main
-   ```
-
-### Alternative: Use the provided batch file
-```bash
-run-app.bat
+```powershell
+mvn dependency:go-offline
 ```
 
-## Project Structure
+Builds use the exact JavaFX 21.0.2, SQLite 3.44.1.0, and Jackson 2.16.1 dependencies declared in `pom.xml`, plus SQLite's SLF4J API dependency. A separately downloaded JavaFX SDK is unnecessary.
 
-```
-AIMoodChecker/
-├── src/
-│   ├── main/
-│   │   ├── java/com/aimoodchecker/
-│   │   │   ├── controller/          # UI controllers
-│   │   │   ├── dao/                 # Database access
-│   │   │   ├── repository/          # Data repository layer
-│   │   │   ├── service/             # Business logic services
-│   │   │   └── Main.java           # Application entry point
-│   │   └── resources/
-│   │       ├── App.fxml            # Main application layout
-│   │       ├── HomeView.fxml       # Home screen
-│   │       ├── ComposeView.fxml    # Mood logging form
-│   │       ├── HistoryView.fxml    # Mood history display
-│   │       ├── styles.css          # Custom styling
-│   │       └── images/             # Application assets
-├── target/                          # Compiled classes
-├── pom.xml                          # Maven configuration
-├── run-app.bat                      # Windows run script
-└── README.md                        # This file
+```powershell
+.\build.ps1
+.\run-app.ps1 -Offline
+.\verify-functional.ps1
+.\verify-ui.ps1
+.\package-windows.ps1
 ```
 
-## Usage
+`run-app.bat` calls the PowerShell launcher. The source launcher always uses the repository directory for its journal, preserving the existing development `mood.db` location. The packaged launcher defaults to Local AppData as described above.
 
-1. **Launch the application** - You'll see the home screen with your logo
-2. **Click "Log mood"** - Navigate to the mood logging interface
-3. **Select your mood** - Select your mood
-4. **Add details** - Write a description of how you're feeling
-5. **Save entry** - Your mood is stored in the database
-6. **View history** - See all your previous mood entries
+Each build uses a fresh `target/build-<id>` directory. `package-windows.ps1` produces both an application folder and a ZIP there, with a printed SHA-256 digest. It includes compiled application classes, resources, dependency jars, and a Java runtime. Test classes, sample journals, API keys, `.env`, and config files are excluded.
 
-## 🔧 Development
+## Verification
 
-### Key Components
+`verify-functional.ps1` uses a fresh synthetic journal and injected fake HTTP responses. It checks local scoring, JSON escaping/parsing, missing credentials, HTTP/network failures, interruption, CRUD persistence, chronology, missing scores, date ranges, and concurrent saves. It makes no network request.
 
-- **`AppController`**: Main application controller managing navigation
-- **`HomeController`**: Handles home screen interactions
-- **`ComposeController`**: Manages mood entry form
-- **`HistoryController`**: Displays mood history
-- **`EntryRepository`**: Data access layer for mood entries
-- **`SentimentService`**: Future AI sentiment analysis integration
+`verify-ui.ps1` loads and snapshots the actual JavaFX views, checks validation and duplicate-save prevention, confirms/cancels draft and delete dialogs, and tests recovery from a database write failure. Its coaching service is stubbed and offline mode is enabled. Screenshots are written under the printed build path. Add `-LaunchPreview` to inspect the sample journal interactively; it never opens the personal journal.
 
-### Adding New Features
-
-1. Create new FXML file in `src/main/resources/`
-2. Create corresponding controller implementing `RoutedController`
-3. Add navigation method in `AppController`
-4. Update UI to include navigation to new feature
-
-## Future Enhancements
-
-- [ ] **AI Sentiment Analysis**: Analyze mood descriptions using NLP
-- [ ] **Mood Trends**: Charts and graphs showing mood patterns
-- [ ] **Reminders**: Daily mood check-in notifications
-- [ ] **Export Data**: CSV/PDF reports of mood history
-- [ ] **Cloud Sync**: Backup mood data to cloud storage
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-
-
-## Acknowledgments
-
-- Built with JavaFX and modern Java technologies
-- Inspired by the need for better mental health tracking
-- Special thanks to the JavaFX community
+See `UI-VALIDATION.md` for the approved design's rendering coverage and `RELEASE-VALIDATION.md` for the latest functional and packaging evidence.

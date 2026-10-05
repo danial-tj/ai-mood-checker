@@ -1,26 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-
-<BorderPane xmlns="http://javafx.com/javafx/17"
-            xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.aimoodchecker.controller.AppController"
-            styleClass="main-container">
-    <top>
-        <ToolBar styleClass="toolbar" style="-fx-padding: 16;">
-            <Label text="AI Mood Checker" 
-                   styleClass="title-label" 
-                   style="-fx-font-size: 20px; -fx-padding: 0 16 0 0; -fx-text-fill: #1e293b;"/>
-            <Region HBox.hgrow="ALWAYS"/> <!-- spacer -->
-            <Label fx:id="statusLabel" 
-                   text="Ready" 
-                   styleClass="status-label info"
-                   style="-fx-padding: 8 16;"/>
-        </ToolBar>
-    </top>
-
-    <!-- This is where "pages" will be placed -->
-    <center>
-        <StackPane fx:id="content" style="-fx-padding: 24; -fx-background-color: transparent;"/>
-    </center>
+<?import javafx.scene.shape.SVGPath?>
+<BorderPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.aimoodchecker.controller.AppController" styleClass="app-shell">
+    <left>
+        <VBox prefWidth="212" minWidth="212" maxWidth="212" spacing="8" styleClass="sidebar">
+            <HBox alignment="CENTER_LEFT" spacing="10" styleClass="brand">
+                <StackPane styleClass="brand-mark" minWidth="32" prefWidth="32" minHeight="32" prefHeight="32">
+                    <SVGPath content="M 0 12 Q 6 0 12 12 Q 18 24 24 12" styleClass="brand-symbol"/>
+                </StackPane>
+                <VBox spacing="1"><Label text="mood checker" styleClass="brand-name"/><Label text="A space to reflect" styleClass="brand-caption"/></VBox>
+            </HBox>
+            <Label text="YOUR SPACE" styleClass="nav-caption"/>
+            <ToggleButton fx:id="homeNav" text="Overview" onAction="#goHome" styleClass="nav-item" maxWidth="Infinity"/>
+            <ToggleButton fx:id="composeNav" text="Daily check-in" onAction="#goCompose" styleClass="nav-item" maxWidth="Infinity"/>
+            <ToggleButton fx:id="historyNav" text="Your journal" onAction="#goHistory" styleClass="nav-item" maxWidth="Infinity"/>
+            <ToggleButton fx:id="graphNav" text="Mood trends" onAction="#goGraph" styleClass="nav-item" maxWidth="Infinity"/>
+            <Region VBox.vgrow="ALWAYS" minHeight="24"/>
+            <VBox spacing="8" styleClass="sidebar-note">
+                <Label text="One day at a time." styleClass="note-heading" wrapText="true"/>
+                <Label text="There's no right way to feel. Make room for all of it." styleClass="muted" wrapText="true"/>
+            </VBox>
+            <Label text="AI MOOD CHECKER" styleClass="sidebar-footer"/>
+        </VBox>
+    </left>
+    <center><StackPane fx:id="content" minWidth="0"/></center>
+    <bottom>
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="status-bar">
+            <Label text="LOCAL JOURNAL" styleClass="status-tag"/>
+            <Label fx:id="statusLabel" text="Ready for a moment of reflection" styleClass="status-text" wrapText="true"/>
+        </HBox>
+    </bottom>
 </BorderPane>

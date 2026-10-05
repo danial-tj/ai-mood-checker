@@ -1,48 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.geometry.Insets?>
-
-<VBox xmlns="http://javafx.com/javafx/17"
-      xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.aimoodchecker.controller.GraphController"
-      spacing="24" 
-      styleClass="glass-card"
-      style="-fx-padding: 32;">
-
-            <HBox spacing="16" alignment="CENTER_LEFT">
-            <Button text="← Back" 
-                    onAction="#onBack" 
-                    styleClass="nav-button"/>
-            <Label text="📊 Mood Trends" 
-                   styleClass="title-label" 
-                   style="-fx-font-size: 24px;"/>
-            <Pane HBox.hgrow="ALWAYS" />
-            <Label text="Range:" 
-                   styleClass="modern-label"/>
-            <ComboBox fx:id="rangeCombo" 
-                      prefWidth="140"
-                      styleClass="modern-combo"/>
-            <Button text="🔄 Refresh" 
-                    onAction="#onRefresh" 
-                    styleClass="compact-nav-button"/>
-        </HBox>
-
-    <!-- Status label for feedback -->
-    <Label fx:id="statusLabel" 
-           text="Ready to display trends" 
-           styleClass="status-label info"
-           alignment="CENTER" />
-
-    <!-- Chart container -->
-    <VBox fx:id="chartContainer" 
-           VBox.vgrow="ALWAYS" 
-           style="-fx-padding: 24;" />
-
-    <Label text="💡 Tip: Both your mood and AI sentiment are displayed on the same 0-1 scale for easy comparison."
-           styleClass="modern-label"
-           style="-fx-font-size: 14px; -fx-opacity: 0.8;"
-           alignment="CENTER" />
-
+<VBox xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aimoodchecker.controller.GraphController" spacing="24" styleClass="page">
+    <VBox spacing="6"><Label text="MOOD TRENDS" styleClass="eyebrow"/><Label text="Notice your patterns." styleClass="page-title"/><Label text="Every day is different. Look for the bigger picture." styleClass="subtitle" wrapText="true"/></VBox>
+    <VBox spacing="18" styleClass="chart-panel" VBox.vgrow="ALWAYS">
+        <HBox alignment="CENTER_LEFT" spacing="12"><Label text="Your mood over time" styleClass="section-title"/><Region HBox.hgrow="ALWAYS"/><Label text="Range" styleClass="muted" labelFor="$rangeCombo"/><ComboBox fx:id="rangeCombo" prefWidth="150" accessibleText="Trend date range"/><Button text="Refresh" onAction="#onRefresh" styleClass="secondary-button"/></HBox>
+        <Label fx:id="statusLabel" text="Loading your check-ins…" styleClass="muted"/>
+        <VBox fx:id="chartContainer" VBox.vgrow="ALWAYS" minHeight="230" alignment="CENTER"/>
+    </VBox>
+    <Label text="Daily averages · Sad = 0, neutral = 0.5, happy = 1. Text tone is a keyword-based estimate on the same scale." styleClass="page-note" wrapText="true"/>
 </VBox>

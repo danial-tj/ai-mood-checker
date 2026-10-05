@@ -1,45 +1,35 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.scene.image.*?>
-
-<VBox xmlns="http://javafx.com/javafx/17" 
-      xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="com.aimoodchecker.controller.HomeController"
-      alignment="CENTER"
-      spacing="32"
-      styleClass="glass-card"
-      style="-fx-padding: 48;">
-
-    <Label text="AI Mood Checker" styleClass="title-label" alignment="CENTER"/>
-
-    <Label text="Track your emotions and get AI-powered insights" 
-           styleClass="subtitle-label" 
-           alignment="CENTER"/>
-
-    <ImageView fx:id="logo" fitWidth="180" preserveRatio="true">
-        <image>
-            <Image url="@images/logo.png"/>
-        </image> 
-    </ImageView>
-
-    <VBox spacing="24" alignment="CENTER">
-        <Label text="What would you like to do today?" 
-               styleClass="modern-label" 
-               alignment="CENTER"/>
-        
-        <HBox alignment="CENTER" spacing="24">
-            <Button fx:id="logMoodBtn" 
-                    text="📝 Log Mood" 
-                    onAction="#handleLogMood"
-                    styleClass="primary-button"/>
-            
-            <Button fx:id="viewHistoryBtn" 
-                    text="📊 View History" 
-                    onAction="#handleViewHistory"
-                    styleClass="secondary-button"/>
+<?import javafx.scene.shape.*?>
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aimoodchecker.controller.HomeController" fitToWidth="true" hbarPolicy="NEVER" styleClass="page-scroll">
+    <content><VBox spacing="28" styleClass="page">
+        <HBox alignment="CENTER_LEFT" spacing="16">
+            <Label text="YOUR DAILY PAUSE" styleClass="eyebrow"/>
+            <Region HBox.hgrow="ALWAYS"/>
+            <Label fx:id="dateLabel" styleClass="date-label"/>
         </HBox>
-    </VBox>
-
-</VBox>
+        <HBox spacing="24" alignment="CENTER_LEFT" styleClass="welcome-panel">
+            <VBox spacing="18" HBox.hgrow="ALWAYS">
+                <Label text="A little space for&#10;how you feel." styleClass="hero-title" wrapText="true"/>
+                <Label text="Pause, put it into words, and notice what changes.&#10;A small check-in can be a good place to start." styleClass="hero-copy" wrapText="true"/>
+                <Button text="Start a check-in   →" onAction="#handleLogMood" styleClass="primary-button"/>
+            </VBox>
+            <StackPane minWidth="160" prefWidth="160" maxWidth="160" minHeight="170" prefHeight="170" styleClass="reflection-art" mouseTransparent="true">
+                <Circle radius="74" styleClass="art-outer"/>
+                <Circle radius="55" styleClass="art-inner"/>
+                <SVGPath content="M 0 40 Q 30 -8 60 40 Q 90 88 120 40" styleClass="art-wave"/>
+                <Circle radius="7" translateX="45" translateY="-56" styleClass="art-sun"/>
+            </StackPane>
+        </HBox>
+        <HBox spacing="16" styleClass="stats-row">
+            <VBox spacing="8" styleClass="stat-panel" HBox.hgrow="ALWAYS" maxWidth="Infinity"><Label text="THIS WEEK" styleClass="eyebrow"/><Label fx:id="weekCount" text="0" styleClass="stat-value"/><Label text="check-ins in the last 7 days" styleClass="muted" wrapText="true"/></VBox>
+            <VBox spacing="8" styleClass="stat-panel" HBox.hgrow="ALWAYS" maxWidth="Infinity"><Label text="LAST CHECK-IN" styleClass="eyebrow"/><Label fx:id="lastMood" text="—" styleClass="stat-value"/><Label fx:id="lastDate" text="Whenever you're ready" styleClass="muted" wrapText="true"/></VBox>
+            <VBox spacing="8" styleClass="stat-panel" HBox.hgrow="ALWAYS" maxWidth="Infinity"><Label text="YOUR JOURNAL" styleClass="eyebrow"/><Label fx:id="totalCount" text="0" styleClass="stat-value"/><Label text="moments you've recorded" styleClass="muted" wrapText="true"/></VBox>
+        </HBox>
+        <VBox spacing="14">
+            <HBox alignment="CENTER_LEFT"><Label text="Recent reflections" styleClass="section-title"/><Region HBox.hgrow="ALWAYS"/><Button text="Open journal  →" onAction="#handleViewHistory" styleClass="text-button"/></HBox>
+            <VBox fx:id="recentEntries" spacing="10"/>
+        </VBox>
+    </VBox></content>
+</ScrollPane>

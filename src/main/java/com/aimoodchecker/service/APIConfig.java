@@ -1,126 +1,53 @@
 package com.aimoodchecker.service;
 
-import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.file.Path;
 import java.util.Properties;
 
-/**
- * Configuration class for API keys and settings
- * Loads configuration from properties file, .env file, or environment variables
- */
-public class APIConfig {
-    
-    private static final String CONFIG_FILE = "config.properties";
-    private static final String ENV_FILE = ".env";
-    private static Properties properties;
-    
+/** Local configuration. Values and credentials are never written to logs. */
+public final class APIConfig {
+    private static final Properties CONFIG = new Properties();
+    private static final Properties DOT_ENV = new Properties();
     static {
-        loadConfig();
-        loadEnvFile();
-    }
-    
-    /**
-     * Loads configuration from properties file
-     */
-    private static void loadConfig() {
-        properties = new Properties();
-        
-        try {
-            // Try to load from properties file first
-            FileInputStream fis = new FileInputStream(CONFIG_FILE);
-            properties.load(fis);
-            fis.close();
-            System.out.println("Configuration loaded from " + CONFIG_FILE);
-        } catch (IOException e) {
-            System.out.println("Config file not found, will use .env and environment variables");
+        Path directory = Path.of(System.getProperty("aimoodchecker.dataDir", "."));
+        Path properties = directory.resolve("config.properties");
+        if (Files.isRegularFile(properties)) {
+            try (Reader reader = Files.newBufferedReader(properties, StandardCharsets.UTF_8)) { CONFIG.load(reader); }
+            catch (IOException ignored) { /* Environment variables remain available. */ }
         }
-        
-    }
-    
-    /**
-     * Loads environment variables from .env file
-     */
-    private static void loadEnvFile() {
-        try {
-            if (Files.exists(Paths.get(ENV_FILE))) {
-                Files.lines(Paths.get(ENV_FILE))
-                    .filter(line -> !line.trim().isEmpty() && !line.trim().startsWith("#"))
-                    .forEach(line -> {
-                        if (line.contains("=")) {
-                            String[] parts = line.split("=", 2);
-                            if (parts.length == 2) {
-                                String key = parts[0].trim();
-                                String value = parts[1].trim();
-                                // Set as system property so it's available to the app
-                                System.setProperty(key, value);
-                                System.out.println("Loaded from .env: " + key + "=" + (key.contains("KEY") ? "***" : value));
-                            }
-                        }
-                    });
-                System.out.println("Environment variables loaded from " + ENV_FILE);
-            } else {
-                System.out.println(".env file not found, using system environment variables");
-            }
-        } catch (IOException e) {
-            System.err.println("Error reading .env file: " + e.getMessage());
+        Path env = directory.resolve(".env");
+        if (Files.isRegularFile(env)) {
+            try (var lines = Files.lines(env, StandardCharsets.UTF_8)) {
+                lines.map(String::trim).filter(line -> !line.isEmpty() && !line.startsWith("#")).forEach(line -> {
+                    int equals = line.indexOf('=');
+                    if (equals > 0) {
+                        String key = line.substring(0, equals).trim();
+                        String value = line.substring(equals + 1).trim();
+                        if (value.length() >= 2 && ((value.startsWith("\"") && value.endsWith("\"")) || (value.startsWith("'") && value.endsWith("'"))))
+                            value = value.substring(1, value.length() - 1);
+                        DOT_ENV.setProperty(key, value);
+                    }
+                });
+            } catch (IOException ignored) { /* Environment variables remain available. */ }
         }
     }
-    
-    /**
-     * Gets the OpenAI API key from config file, .env file, or environment variable
-     * @return API key or null if not found
-     */
+    private APIConfig() {}
     public static String getOpenAIKey() {
-        // Try config file first, then .env/system properties, then environment variable
-        String apiKey = properties.getProperty("openai.api.key");
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getProperty("OPENAI_API_KEY");
-        }
-        if (apiKey == null || apiKey.isEmpty()) {
-            apiKey = System.getenv("OPENAI_API_KEY");
-        }
-        return apiKey;
+        for (String value : new String[]{CONFIG.getProperty("openai.api.key"), System.getProperty("OPENAI_API_KEY"), DOT_ENV.getProperty("OPENAI_API_KEY"), System.getenv("OPENAI_API_KEY")})
+            if (value != null && !value.isBlank()) return value.trim();
+        return null;
     }
-    
-    /**
-     * Gets the ChatGPT model to use
-     * @return Model name (default: gpt-3.5-turbo)
-     */
-    public static String getChatGPTModel() {
-        return properties.getProperty("openai.model", "gpt-3.5-turbo");
-    }
-    
-    /**
-     * Gets the maximum tokens for ChatGPT responses
-     * @return Max tokens (default: 150)
-     */
+    public static String getChatGPTModel() { return CONFIG.getProperty("openai.model", "gpt-3.5-turbo"); }
     public static int getMaxTokens() {
-        try {
-            return Integer.parseInt(properties.getProperty("openai.max.tokens", "150"));
-        } catch (NumberFormatException e) {
-            return 150;
-        }
+        try { int value = Integer.parseInt(CONFIG.getProperty("openai.max.tokens", "1200")); return value > 0 ? value : 1200; }
+        catch (NumberFormatException error) { return 1200; }
     }
-    
-    /**
-     * Gets the temperature setting for ChatGPT
-     * @return Temperature (default: 0.7)
-     */
     public static double getTemperature() {
-        try {
-            return Double.parseDouble(properties.getProperty("openai.temperature", "0.7"));
-        } catch (NumberFormatException e) {
-            return 0.7;
-        }
+        try { double value = Double.parseDouble(CONFIG.getProperty("openai.temperature", "0.8")); return Double.isFinite(value) && value >= 0 && value <= 2 ? value : 0.8; }
+        catch (NumberFormatException error) { return 0.8; }
     }
-    
-    /**
-     * Checks if API is properly configured
-     * @return true if API key is available
-     */
-    public static boolean isConfigured() {
-        return getOpenAIKey() != null && !getOpenAIKey().isEmpty();
-    }
+    public static boolean isConfigured() { return getOpenAIKey() != null; }
 }

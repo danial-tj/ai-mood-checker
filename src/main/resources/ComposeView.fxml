@@ -1,62 +1,39 @@
 <?xml version="1.0" encoding="UTF-8"?>
-
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
-<?import javafx.geometry.Insets?>
-
-<VBox xmlns="http://javafx.com/javafx/17" 
-      xmlns:fx="http://javafx.com/fxml/1" 
-      fx:controller="com.aimoodchecker.controller.ComposeController"
-      alignment="CENTER"
-      spacing="32"
-      styleClass="glass-card"
-      style="-fx-padding: 48;">
-
-    <Label text="Log Your Mood" styleClass="title-label" alignment="CENTER"/>
-
-    <VBox spacing="32" maxWidth="600" alignment="CENTER">
-        <Label text="How are you feeling today?" 
-               styleClass="modern-label" 
-               alignment="CENTER"/>
-        
-        <HBox spacing="24" alignment="CENTER">
-            <Button text="😊 Happy" 
-                    onAction="#onHappy" 
-                    styleClass="happy-button"/>
-            <Button text="😐 Neutral" 
-                    onAction="#onNeutral" 
-                    styleClass="neutral-button"/>
-            <Button text="😔 Sad" 
-                    onAction="#onSad" 
-                    styleClass="sad-button"/>
-        </HBox>
-        
-        <Label fx:id="selectedMoodLabel" 
-               text="No mood selected yet" 
-               styleClass="mood-status-label"
-               alignment="CENTER"/>
-        
-        <VBox spacing="16" alignment="CENTER">
-            <Label text="Describe your mood:" 
-                   styleClass="modern-label" 
-                   alignment="CENTER"/>
-            <TextArea fx:id="moodText" 
-                      promptText="Tell me more about how you're feeling..." 
-                      prefRowCount="5" 
-                      wrapText="true" 
-                      styleClass="modern-textarea"
-                      prefWidth="500"/>
+<?import javafx.scene.shape.SVGPath?>
+<ScrollPane xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.aimoodchecker.controller.ComposeController" fitToWidth="true" hbarPolicy="NEVER" styleClass="page-scroll">
+    <fx:define><ToggleGroup fx:id="moodGroup"/></fx:define>
+    <content><VBox spacing="26" styleClass="page">
+        <VBox spacing="6"><Label text="DAILY CHECK-IN" styleClass="eyebrow"/><Label text="How are you, really?" styleClass="page-title"/><Label text="Take a breath. You can start exactly where you are." styleClass="subtitle" wrapText="true"/></VBox>
+        <VBox spacing="24" styleClass="form-panel">
+            <VBox spacing="12">
+                <Label text="01    Choose the mood that feels closest" styleClass="field-label" wrapText="true"/>
+                <HBox spacing="12">
+                    <ToggleButton fx:id="happyButton" toggleGroup="$moodGroup" userData="Happy" onAction="#onMoodSelected" text="Happy" contentDisplay="TOP" graphicTextGap="12" styleClass="mood-option" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <graphic><SVGPath content="M 20 0 A 20 20 0 1 1 19.99 0 M 12 14 L 12 15 M 28 14 L 28 15 M 11 25 Q 20 36 29 25" styleClass="mood-face"/></graphic>
+                    </ToggleButton>
+                    <ToggleButton fx:id="neutralButton" toggleGroup="$moodGroup" userData="Neutral" onAction="#onMoodSelected" text="Neutral" contentDisplay="TOP" graphicTextGap="12" styleClass="mood-option" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <graphic><SVGPath content="M 20 0 A 20 20 0 1 1 19.99 0 M 12 14 L 12 15 M 28 14 L 28 15 M 12 28 L 28 28" styleClass="mood-face"/></graphic>
+                    </ToggleButton>
+                    <ToggleButton fx:id="sadButton" toggleGroup="$moodGroup" userData="Sad" onAction="#onMoodSelected" text="Sad" contentDisplay="TOP" graphicTextGap="12" styleClass="mood-option" maxWidth="Infinity" HBox.hgrow="ALWAYS">
+                        <graphic><SVGPath content="M 20 0 A 20 20 0 1 1 19.99 0 M 12 14 L 12 15 M 28 14 L 28 15 M 11 31 Q 20 21 29 31" styleClass="mood-face"/></graphic>
+                    </ToggleButton>
+                </HBox>
+                <Label fx:id="selectedMoodLabel" text="All feelings are welcome here." styleClass="muted"/>
+            </VBox>
+            <VBox spacing="10">
+                <Label text="02    What's on your mind?" styleClass="field-label" labelFor="$moodText"/>
+                <TextArea fx:id="moodText" promptText="What happened today? What stayed with you?" prefRowCount="5" minHeight="140" wrapText="true" styleClass="journal-input" accessibleText="Describe how you are feeling"/>
+                <Label text="A sentence or two is enough. Your entry is saved to this device; AI analysis uses your configured service." styleClass="muted" wrapText="true"/>
+            </VBox>
+            <Label fx:id="errorLabel" visible="false" managed="false" styleClass="field-error" wrapText="true"/>
+            <HBox alignment="CENTER_LEFT" spacing="12">
+                <Button fx:id="saveBtn" text="Save check-in" onAction="#onSave" styleClass="primary-button" defaultButton="true"/>
+                <Button fx:id="cancelBtn" text="Cancel" onAction="#onCancel" styleClass="secondary-button"/>
+                <Label fx:id="saveStatus" styleClass="muted" wrapText="true" HBox.hgrow="ALWAYS"/>
+            </HBox>
         </VBox>
-        
-        <HBox spacing="24" alignment="CENTER">
-            <Button fx:id="saveBtn" 
-                    text="💾 Save Mood" 
-                    onAction="#onSave" 
-                    styleClass="success-button"/>
-            <Button fx:id="cancelBtn" 
-                    text="❌ Cancel" 
-                    onAction="#onCancel" 
-                    styleClass="danger-button"/>
-        </HBox>
-    </VBox>
-</VBox>
+        <Label text="Your words matter more than a score. Use AI reflections as a prompt to explore how you feel." styleClass="page-note" wrapText="true"/>
+    </VBox></content>
+</ScrollPane>
