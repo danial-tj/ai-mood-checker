@@ -104,3 +104,9 @@ config.ini
 .env
 .env.local
 .env.*.local
+
+# Proactive planner local state and SQLite sidecars
+proactive/data/
+*.db-journal
+*.db-wal
+*.db-shm

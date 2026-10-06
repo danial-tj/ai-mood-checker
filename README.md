@@ -1,5 +1,19 @@
 # AI Mood Checker
 
+## New: a next-action planner
+
+The repository now also contains a local web prototype for students whose schedules change. Try a late shift, choose how much time you have, and accept one confirmed step that fits around your calendar and before its deadline. Mood logging is optional; the planner does not read the desktop journal.
+
+```powershell
+.\run-planner.ps1
+```
+
+Open **http://127.0.0.1:8471/**. The sample day works without an account or API key. See [planner setup and walkthrough](proactive/README.md) and [validation and feature status](docs/PROACTIVE-VALIDATION.md).
+
+The Google Calendar adapter includes read-only Desktop OAuth and bounded sync, tested with synthetic responses. Real sign-in needs your Google OAuth configuration and has not yet been verified. Reminders currently reach a local inbox; phone push delivery, hosted access and multi-user authentication are not implemented.
+
+## Existing desktop journal
+
 A Windows JavaFX desktop journal with three mood choices, saved reflections, history, and mood/tone trends. Check-ins and the keyword-based tone estimate work locally. AI reflections are optional and require your own API configuration.
 
 ## Use the packaged application
