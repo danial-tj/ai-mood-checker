@@ -11,7 +11,16 @@ public final class Planner {
     public record Warning(String taskId, String message) {}
     public record Result(Suggestion suggestion, String message, List<Warning> warnings, int windowMinutes) {}
 
+    /** Old energy selections without an expiry are treated as unknown, never as a lasting trait. */
+    public static String effectiveEnergy(Plan p,long now) {
+        return p.energyExpiresAt>now && Set.of("any","low","focused").contains(p.energy)?p.energy:"any";
+    }
+    public static boolean calendarChecked(Plan p,long now) {
+        return p.demo || (p.connection.equals("connected") && now-p.lastSync<=15*60000L && p.horizon>now);
+    }
     public static Result suggest(Plan p, long now) {
+        if(p.supportActions.stream().anyMatch(a->a.status.equals("planned") || a.status.equals("needs-review")))
+            return new Result(null,"Your chosen wellbeing action is saved. Take it at your pace; you can respond or skip when ready.",List.of(),0);
         List<Warning> warnings=new ArrayList<>();
         List<Task> tasks=p.tasks.stream().filter(t->t.remaining==null || t.remaining>0)
             .sorted(Comparator.comparingLong((Task t)->t.deadline).thenComparing(t->t.id)).toList();
@@ -30,7 +39,7 @@ public final class Planner {
         }
         if (p.sessions.stream().anyMatch(s->s.status.equals("planned")))
             return new Result(null,"You have an accepted action. Complete or skip it before choosing another.",warnings,window);
-        if(!p.demo && (!p.connection.equals("connected") || now-p.lastSync>15*60000L))
+        if(!calendarChecked(p,now))
             return new Result(null,"Sync Google Calendar before choosing an action; the saved schedule may be out of date.",warnings,window);
         for(Task t:tasks) {
             if(t.remaining==null || t.deadline<=now) continue;
@@ -38,7 +47,7 @@ public final class Planner {
             t.steps.stream().filter(s->s.done).forEach(s->completed.add(s.id));
             for(Step s:t.steps) {
                 if(!s.confirmed || s.done || s.minutes<1 || s.minutes>t.remaining || p.dismissed.contains(t.id+":"+s.id)
-                    || !completed.containsAll(s.dependsOn) || (p.energy.equals("low") && !s.energy.equals("low"))) continue;
+                    || !completed.containsAll(s.dependsOn) || (effectiveEnergy(p,now).equals("low") && !s.energy.equals("low"))) continue;
                 for(long[] w:free) {
                     long finish=w[0]+s.minutes*60000L;
                     if(finish>w[1] || finish>t.deadline) continue;
@@ -62,6 +71,8 @@ public final class Planner {
         long buffer=p.bufferMinutes*60000L;
         for(Event e:p.events) blocked.add(new long[]{e.start()-buffer,e.end()+buffer});
         if(includeSessions) for(Session s:p.sessions) if(s.status.equals("planned")) blocked.add(new long[]{s.start,s.end});
+        for(SupportAction a:p.supportActions) if(a.status.equals("planned") && a.scheduleChecked)
+            blocked.add(new long[]{a.start,a.end});
         blocked.sort(Comparator.comparingLong(a->a[0]));
         List<long[]> free=new ArrayList<>(); long cursor=start;
         for(long[] b:blocked) {
@@ -74,11 +85,19 @@ public final class Planner {
     }
 
     public static void invalidateSessions(Plan p) {
+        invalidateSupport(p);
         for(Session s:p.sessions) if(s.status.equals("planned")) {
             Task t=p.tasks.stream().filter(x->x.id.equals(s.taskId)).findFirst().orElse(null);
             if(t==null || s.end>t.deadline || p.events.stream().anyMatch(e->s.start<e.end()+p.bufferMinutes*60000L && s.end>e.start()-p.bufferMinutes*60000L))
                 s.status="needs-review";
         }
+    }
+
+    /** Apply the same event buffers to calendar-checked wellbeing actions. */
+    public static void invalidateSupport(Plan p) {
+        for(SupportAction a:p.supportActions) if(a.status.equals("planned") && a.scheduleChecked &&
+            p.events.stream().anyMatch(e->a.start<e.end()+p.bufferMinutes*60000L && a.end>e.start()-p.bufferMinutes*60000L))
+            a.status="needs-review";
     }
 
     /** Durable demo inbox delivery. Sending a prompt never completes an action. */
@@ -93,7 +112,9 @@ public final class Planner {
             if(!j.status.equals("pending")) continue;
             if(j.version!=p.version || j.expires<=now) { j.status="expired"; continue; }
             if(j.due>now || !prefs.reminders || prefs.paused || now<prefs.snoozeUntil || quiet || count>=prefs.dailyLimit) continue;
-            if(suggest(p,now).suggestion()==null) {j.status="expired"; continue;}
+            // A changed reservation needs attention even while chosen rest suppresses work prompts.
+            boolean supportReview=p.supportActions.stream().anyMatch(a->a.scheduleChecked && a.status.equals("needs-review"));
+            if(!supportReview && suggest(p,now).suggestion()==null) {j.status="expired"; continue;}
             j.status="inbox"; j.delivered=now; count++;
         }
     }

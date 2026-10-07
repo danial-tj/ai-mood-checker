@@ -14,7 +14,7 @@ public final class PlannerChecks {
     private static final Path DIRECTORY=Path.of("proactive/target/checks-"+UUID.randomUUID());
     public static void main(String[] args) throws Exception {
         Files.createDirectories(DIRECTORY);
-        engine();responses();calendar();notifications();dates();input();
+        engine();responses();calendar();notifications();dates();input();checkIns();support();supportNotifications();
         System.out.println("PASS: "+checks+" planner checks; synthetic data and fake Google transport only.");
     }
     private static void check(boolean condition,String message) {if(!condition)throw new AssertionError(message);checks++;System.out.println("PASS: "+message);}
@@ -31,7 +31,7 @@ public final class PlannerChecks {
         check(first.equals(Planner.suggest(p,now)),"Stable input yields exactly the same suggestion and explanation");
         p.availableMinutes=10;check(Planner.suggest(p,now).suggestion().stepId().equals("notes"),"Ten-minute capacity finds a confirmed fitting step");
         p.availableMinutes=5;check(Planner.suggest(p,now).suggestion()==null,"No arbitrary fragments are invented for a five-minute slot");
-        p.availableMinutes=40;p.energy="low";
+        p.availableMinutes=40;p.energy="low";p.energyExpiresAt=now+Support.CONTEXT_LIFETIME;
         check(Planner.suggest(p,now).suggestion().stepId().equals("outline"),"Explicit low energy permits only a light step");
         p.tasks.getFirst().steps.getFirst().done=true;p.tasks.getFirst().remaining=70;
         check(Planner.suggest(p,now).suggestion().stepId().equals("notes"),"Low energy excludes the focused follow-up step");
@@ -148,6 +148,53 @@ public final class PlannerChecks {
         PlanService service=new PlanService(db,CLOCK);service.tick();service.tick();check(db.read().jobs.size()==1 && db.read().jobs.getFirst().status.equals("inbox"),"Durable job survives store reload and is processed idempotently");
         check(db.read().tasks.getFirst().remaining==90,"Notification delivery is never interpreted as task completion");
     }
+    private static void supportNotifications() throws Exception {
+        PlanStore db=store();PlanService service=new PlanService(db,CLOCK);
+        db.change(p->{p.preferences.reminders=true;return null;});
+        act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"Take a break\",\"minutes\":10}");
+        Plan resting=db.read();long now=resting.demoNow;
+        resting.jobs.add(new Job("ordinary","A work suggestion",resting.version,now));
+        Planner.deliver(resting,now);
+        check(resting.jobs.getLast().status.equals("expired") && resting.supportActions.getLast().status.equals("planned"),
+            "Ordinary planned rest suppresses work reminders without changing the user's choice");
+        SupportAction action=db.read().supportActions.getLast();
+        service.applyCalendar(List.of(new Event("conflict","Changed commitment",action.start,action.end,"google","new")),
+            CLOCK.millis(),CLOCK.millis()+14*86400000L);
+        Plan pending=db.read();
+        check(pending.supportActions.getLast().status.equals("needs-review") && pending.jobs.size()==1 && pending.jobs.getFirst().status.equals("pending"),
+            "Conflicting Google sync queues one review notice for reserved wellbeing time");
+        check(pending.jobs.getFirst().reason.equals(pending.reason) && pending.reason.contains("needs review") &&
+            pending.reason.contains("not been automatically rescheduled") && pending.supportActions.getLast().start==action.start &&
+            pending.supportActions.getLast().end==action.end,
+            "Calendar conflict notice requests review honestly and leaves the saved reservation unchanged");
+        service.tick();service.tick();
+        Plan delivered=db.read();
+        check(delivered.jobs.size()==1 && delivered.jobs.getFirst().status.equals("inbox") && delivered.jobs.getFirst().delivered==now,
+            "A wellbeing calendar conflict reaches the opted-in inbox exactly once without a work suggestion");
+        check(Planner.suggest(delivered,now).suggestion()==null && delivered.tasks.getFirst().remaining==90,
+            "Conflict delivery keeps work prompts paused and task effort unchanged");
+        for(String mode:List.of("opt-out","paused","snoozed","quiet","daily-limit")) {
+            Plan blocked=JSON.readValue(JSON.writeValueAsBytes(pending),Plan.class);
+            switch(mode) {
+                case "opt-out" -> blocked.preferences.reminders=false;
+                case "paused" -> blocked.preferences.paused=true;
+                case "snoozed" -> blocked.preferences.snoozeUntil=now+3600000L;
+                case "quiet" -> {blocked.preferences.quietStart=17;blocked.preferences.quietEnd=9;}
+                case "daily-limit" -> {
+                    Job earlier=new Job("earlier","Earlier notice",blocked.version,now);
+                    earlier.status="inbox";earlier.delivered=now;blocked.jobs.add(earlier);
+                }
+            }
+            Planner.deliver(blocked,now);
+            check(blocked.jobs.getFirst().status.equals("pending"),"Wellbeing conflict respects reminder control: "+mode);
+        }
+        Plan obsolete=JSON.readValue(JSON.writeValueAsBytes(pending),Plan.class);obsolete.version++;
+        Planner.deliver(obsolete,now);
+        check(obsolete.jobs.getFirst().status.equals("expired"),"A wellbeing conflict notice still expires when the plan version changes");
+        Plan late=JSON.readValue(JSON.writeValueAsBytes(pending),Plan.class);late.jobs.getFirst().expires=now;
+        Planner.deliver(late,now);
+        check(late.jobs.getFirst().status.equals("expired"),"An expired wellbeing conflict notice is never delivered");
+    }
     private static void dates() throws Exception {
         rejects(()->PlanService.deadline("2026-03-08T02:30","America/Vancouver"),"Nonexistent spring-forward deadline is rejected");
         rejects(()->PlanService.deadline("2026-11-01T01:30","America/Vancouver"),"Ambiguous fall-back deadline needs an explicit different time");
@@ -168,4 +215,119 @@ public final class PlannerChecks {
         act(s,"{\"action\":\"clear\"}");check(db.read().tasks.isEmpty() && db.read().events.isEmpty() && db.read().sessions.isEmpty() && !db.read().demo,"Clear deletes planner data and returns an empty personal plan");
         act(s,"{\"action\":\"reset\"}");check(db.read().demo && db.read().tasks.size()==2,"Sample scenario is explicitly reloadable");
     }
+    private static void checkIns() throws Exception {
+        PlanStore db=store();PlanService service=new PlanService(db,CLOCK);
+        act(service,"{\"action\":\"checkin\"}");
+        CheckIn first=db.read().checkIns.getLast();
+        check(first.mood.equals("unknown") && first.energy.equals("any"),"Skipping mood and energy preserves unknown context");
+        check(first.expires-first.created==2*3600000L,"Check-in context has a two-hour lifetime");
+        act(service,"{\"action\":\"checkin\",\"mood\":\"mixed\",\"energy\":\"low\"}");
+        check(service.view().get("currentEnergy").equals("low"),"View exposes currently reported energy");
+        check(((Support.View)service.view().get("support")).checkIn().mood.equals("mixed"),"Latest unexpired mood is visible without a score");
+        long checkInExpiry=db.read().energyExpiresAt;
+        act(service,"{\"action\":\"advance\"}");
+        act(service,"{\"action\":\"capacity\",\"minutes\":30}");
+        check(db.read().energy.equals("low") && db.read().energyExpiresAt==checkInExpiry,
+            "Changing only available time preserves the reported energy and original expiry");
+        long version=db.read().version;
+        rejects(()->act(service,"{\"action\":\"checkin\",\"mood\":\"diagnosed\",\"energy\":\"low\"}"),"Unsupported mood labels are rejected");
+        rejects(()->act(service,"{\"action\":\"checkin\",\"mood\":\"good\",\"energy\":\"hyper\"}"),"Unsupported check-in energy is rejected");
+        check(db.read().version==version && db.read().checkIns.size()==2,"Rejected check-ins leave history and version unchanged");
+        Plan expired=db.read();expired.demoNow=checkInExpiry;db.replace(expired);
+        check(service.view().get("currentEnergy").equals("any") && ((Support.View)service.view().get("support")).checkIn()==null,
+            "Expired mood and energy disappear from current context at the boundary");
+        act(service,"{\"action\":\"capacity\",\"minutes\":40}");
+        check(service.view().get("currentEnergy").equals("any") && db.read().energyExpiresAt==checkInExpiry,
+            "Changing only available time cannot renew or resurrect expired energy");
+        Plan p=Plan.sample();long now=p.demoNow;p.events.clear();p.availableMinutes=60;
+        p.tasks.getFirst().deadline=now+6*3600000L;p.tasks.getFirst().steps.getFirst().done=true;p.tasks.getFirst().remaining=70;
+        p.energy="low";p.energyExpiresAt=now+Support.CONTEXT_LIFETIME;
+        check(Planner.suggest(p,now).suggestion().stepId().equals("notes"),"Fresh low energy excludes focused steps");
+        check(Planner.suggest(p,now+Support.CONTEXT_LIFETIME).suggestion().stepId().equals("draft"),"Expired energy no longer excludes a feasible focused step");
+        var legacy=JSON.valueToTree(p);((com.fasterxml.jackson.databind.node.ObjectNode)legacy).remove(List.of("energyExpiresAt","checkIns","supportActions"));
+        Plan migrated=JSON.treeToValue(legacy,Plan.class);
+        check(migrated.checkIns.isEmpty() && migrated.supportActions.isEmpty() && Planner.effectiveEnergy(migrated,now).equals("any"),
+            "Older saved plans load with empty wellbeing history and no indefinite energy assumption");
+        p.energyExpiresAt=now;db.replace(p);respond(service,"accept",suggestion(db).id());
+        act(service,"{\"action\":\"capacity\",\"minutes\":60}");
+        check(db.read().sessions.getLast().status.equals("planned"),"A time-only change uses effective energy when reviewing accepted focused work");
+        p.energyExpiresAt=now+Support.CONTEXT_LIFETIME;
+        db.replace(p);act(service,"{\"action\":\"capacity\",\"minutes\":60,\"energy\":\"low\"}");
+        check(db.read().energyExpiresAt==now+Support.CONTEXT_LIFETIME,"An explicit capacity energy choice also expires in two hours");
+        act(service,"{\"action\":\"checkin\",\"mood\":\"low\",\"energy\":\"any\"}");
+        check(suggestion(db).stepId().equals("draft"),"Low reported mood never silently restricts energy or task choice");
+        respond(service,"accept",suggestion(db).id());
+        act(service,"{\"action\":\"checkin\",\"energy\":\"low\"}");
+        check(db.read().sessions.getLast().status.equals("needs-review"),"A new low-energy report flags an accepted focused step for review");
+        for(int i=0;i<105;i++)act(service,"{\"action\":\"checkin\"}");
+        check(db.read().checkIns.size()==100,"Check-in history is capped at one hundred entries");
+        Path saved=DIRECTORY.resolve("wellbeing-persistence.db");PlanStore durable=new PlanStore(saved);durable.replace(db.read());
+        Plan restored=new PlanStore(saved).read();
+        check(restored.checkIns.size()==100 && restored.energyExpiresAt==db.read().energyExpiresAt,"Check-ins and expiry survive a database reopen");
+    }
+    private static void support() throws Exception {
+        PlanStore db=store();PlanService service=new PlanService(db,CLOCK);
+        act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"Sit quietly\",\"minutes\":10,\"cue\":\"After putting my bag down\"}");
+        SupportAction a=db.read().supportActions.getLast();String id=a.id;
+        check(a.scheduleChecked && a.start==db.read().demoNow && a.end-a.start==10*60000L,"A chosen wellbeing action reserves an actual fitting calendar window");
+        check(((Support.View)service.view().get("support")).active().id.equals(id),"Current wellbeing action is exposed in the view");
+        check(suggestion(db)==null && Planner.suggest(db.read(),db.read().demoNow).warnings().isEmpty(),"Choosing rest pauses work prompts and deadline nagging");
+        rejects(()->act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"Another break\",\"minutes\":5}"),"Only one active wellbeing action can be created");
+        int remaining=db.read().tasks.getFirst().remaining;
+        service.act(JSON.valueToTree(Map.of("action","support-respond","id",id,"status","done","helpfulness","no")));
+        check(db.read().tasks.getFirst().remaining==remaining && !db.read().tasks.getFirst().steps.getFirst().done,"Wellbeing completion never reduces task effort or completes a task step");
+        check(db.read().supportActions.getLast().status.equals("done") && db.read().supportActions.getLast().helpfulness.equals("no"),
+            "Completion and whether it helped are recorded independently");
+        service.act(JSON.valueToTree(Map.of("action","support-feedback","id",id,"helpfulness","little")));
+        long version=db.read().version;
+        service.act(JSON.valueToTree(Map.of("action","support-respond","id",id,"status","done","helpfulness","yes")));
+        check(db.read().version==version && db.read().supportActions.getLast().helpfulness.equals("little"),"Replayed completion does not overwrite corrected helpfulness");
+        rejects(()->service.act(JSON.valueToTree(Map.of("action","support-respond","id",id,"status","skipped"))),"A conflicting replay cannot rewrite a completed outcome");
+        rejects(()->service.act(JSON.valueToTree(Map.of("action","support-feedback","id",id,"helpfulness","miracle"))),"Unsupported feedback is rejected");
+        check(db.read().version==version && db.read().supportActions.getLast().helpfulness.equals("little"),"Failed feedback validation rolls back atomically");
+        check(((Support.View)service.view().get("support")).active()==null && suggestion(db)!=null,"Responding releases the pause on future work suggestions");
+        rejects(()->act(service,"{\"action\":\"support-create\",\"kind\":\"treatment\",\"title\":\"No\",\"minutes\":5}"),"Unsupported support categories are rejected");
+        rejects(()->act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"No\",\"minutes\":61}"),"Overlong support duration is rejected");
+        rejects(()->service.act(JSON.valueToTree(Map.of("action","support-create","kind","rest","title","x".repeat(161),"minutes",5))),"Overlong support titles are rejected");
+        rejects(()->service.act(JSON.valueToTree(Map.of("action","support-create","kind","rest","title","Break","cue","x".repeat(161),"minutes",5))),"Overlong optional cues are rejected");
+        Plan overlap=Plan.sample();overlap.events.clear();db.replace(overlap);
+        respond(service,"accept",suggestion(db).id());
+        act(service,"{\"action\":\"support-create\",\"kind\":\"movement\",\"title\":\"Take a comfortable walk\",\"minutes\":10}");
+        Plan both=db.read();SupportAction walk=both.supportActions.getLast();
+        check(walk.start>=both.sessions.getFirst().end,"Accepted work and a later wellbeing action never overlap");
+        long free=Planner.freeWindows(both,both.demoNow,both.demoNow+40*60000L,true).stream().mapToLong(w->(w[1]-w[0])/60000).sum();
+        check(free==10,"Calendar availability subtracts both accepted work and reserved wellbeing time");
+        service.applyCalendar(List.of(new Event("new","New commitment",walk.start,walk.end,"google","2")),CLOCK.millis(),CLOCK.millis()+14*86400000L);
+        check(db.read().supportActions.getLast().status.equals("needs-review"),"A new calendar conflict flags reserved wellbeing time for review");
+        check(Planner.suggest(db.read(),service.now(db.read())).suggestion()==null,"A wellbeing action awaiting review continues to pause work prompts");
+        Plan full=Plan.sample();full.events.add(new Event("busy","Busy",full.demoNow,full.demoNow+3600000L,"sample","1"));db.replace(full);
+        long fullVersion=full.version;
+        rejects(()->act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"Take a break\",\"minutes\":5}"),"A calendar with no fitting window never invents a free support slot");
+        check(db.read().version==fullVersion && db.read().supportActions.isEmpty(),"No-fit support creation leaves persisted state unchanged");
+        act(service,"{\"action\":\"clear\"}");
+        act(service,"{\"action\":\"capacity\",\"minutes\":5,\"energy\":\"any\"}");
+        rejects(()->act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"A longer break\",\"minutes\":10}"),"Even an unscheduled choice must fit the user-declared availability");
+        check(db.read().supportActions.isEmpty(),"An overlong offline choice leaves no saved support action");
+        act(service,"{\"action\":\"support-create\",\"kind\":\"meaningful\",\"title\":\"Send a kind message\",\"minutes\":5}");
+        a=db.read().supportActions.getLast();
+        check(!a.scheduleChecked && a.start==0 && a.end==0 && !((Support.View)service.view().get("support")).calendarChecked(),
+            "A disconnected calendar allows an honest unscheduled personal choice");
+        check(Planner.suggest(db.read(),service.now(db.read())).suggestion()==null,"An unscheduled personal choice still pauses work prompts");
+        String personalId=a.id;
+        rejects(()->service.act(JSON.valueToTree(Map.of("action","support-feedback","id",personalId,"helpfulness","yes"))),"Feedback cannot imply completion before the user responds");
+        service.act(JSON.valueToTree(Map.of("action","support-respond","id",personalId,"status","partly")));
+        check(db.read().supportActions.getLast().helpfulness.equals("unanswered"),"Helpfulness can be left unanswered after a partial action");
+        service.act(JSON.valueToTree(Map.of("action","support-feedback","id",personalId,"helpfulness","unsure")));
+        check(db.read().supportActions.getLast().helpfulness.equals("unsure"),"Helpfulness may be recorded later without changing completion");
+        for(int i=0;i<105;i++) {
+            act(service,"{\"action\":\"support-create\",\"kind\":\"rest\",\"title\":\"Rest\",\"minutes\":1}");
+            service.act(JSON.valueToTree(Map.of("action","support-respond","id",db.read().supportActions.getLast().id,"status","skipped")));
+        }
+        check(db.read().supportActions.size()==100 && ((Support.View)service.view().get("support")).recent().size()==5,"Wellbeing history is capped and the view returns only five recent actions");
+        Path saved=DIRECTORY.resolve("support-restart.db");PlanStore durable=new PlanStore(saved);durable.replace(db.read());
+        check(new PlanStore(saved).read().supportActions.size()==100,"Wellbeing choices and outcomes survive a database reopen");
+        act(service,"{\"action\":\"clear\"}");
+        check(db.read().supportActions.isEmpty() && db.read().checkIns.isEmpty(),"Clearing planner data also clears check-ins and wellbeing history");
+    }
+
 }

@@ -12,7 +12,8 @@ public final class PlanService {
     public long now(Plan p) { return p.demo?p.demoNow:((clock.millis()+59999)/60000)*60000; }
     public Map<String,Object> view() throws Exception {
         Plan p=store.read(); long now=now(p);
-        return Map.of("plan",p,"result",Planner.suggest(p,now),"now",now);
+        return Map.of("plan",p,"result",Planner.suggest(p,now),"now",now,
+            "currentEnergy",Planner.effectiveEnergy(p,now),"support",Support.view(p,now));
     }
     public void act(JsonNode body) throws Exception {
         String action=body.path("action").asText();
@@ -27,14 +28,23 @@ public final class PlanService {
             String responseKey=action+":"+id;
             if(Set.of("accept","complete","skip","dismiss").contains(action) && p.responses.contains(responseKey)) return null;
             switch(action) {
+                case "checkin" -> Support.checkIn(p,body,now);
+                case "support-create" -> Support.create(p,body,now);
+                case "support-respond" -> Support.respond(p,body);
+                case "support-feedback" -> Support.feedback(p,body);
                 case "capacity" -> {
                     p.availableMinutes=integer(body,"minutes",5,180);
-                    String energy=body.path("energy").asText("any");
-                    require(Set.of("any","low","focused").contains(energy),"Choose an energy option.");
-                    p.energy=energy;p.dismissed.clear();p.reason="You changed the time or energy you have available.";p.version++;
+                    if(body.has("energy")) {
+                        require(body.path("energy").isTextual() && Set.of("any","low","focused").contains(body.path("energy").asText()),"Choose an energy option.");
+                        p.energy=body.path("energy").asText();p.energyExpiresAt=now+Support.CONTEXT_LIFETIME;
+                    }
+                    String energy=Planner.effectiveEnergy(p,now);
+                    p.dismissed.clear();p.reason="You changed the time or energy you have available.";p.version++;
                     for(Session session:p.sessions) if(session.status.equals("planned") &&
                         (session.end>now+p.availableMinutes*60000L || (energy.equals("low") && !step(task(p,session.taskId),session.stepId).energy.equals("low"))))
                         session.status="needs-review";
+                    for(SupportAction support:p.supportActions) if(support.status.equals("planned") && support.scheduleChecked && support.end>now+p.availableMinutes*60000L)
+                        support.status="needs-review";
                 }
                 case "shift" -> {
                     require(p.demo,"The changed-shift button is only available in the sample day.");
@@ -119,8 +129,11 @@ public final class PlanService {
             p.demo=false;p.events=new ArrayList<>(events);p.lastSync=synced;p.horizon=horizon;p.connection="connected";
             if(changed) {
                 p.version++;p.dismissed.clear();Planner.invalidateSessions(p);
-                p.reason="Google Calendar changed. Your next action uses the updated schedule.";
-                if(p.sessions.stream().anyMatch(s->s.status.equals("needs-review"))) queue(p,now(p));
+                boolean needsReview=p.sessions.stream().anyMatch(s->s.status.equals("needs-review")) ||
+                    p.supportActions.stream().anyMatch(a->a.status.equals("needs-review"));
+                p.reason=needsReview?"Google Calendar changed. Your saved action needs review; it has not been automatically rescheduled.":
+                    "Google Calendar changed. Your next action uses the updated schedule.";
+                if(needsReview) queue(p,now(p));
             }
             return null;
         });

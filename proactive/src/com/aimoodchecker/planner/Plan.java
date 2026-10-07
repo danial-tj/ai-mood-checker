@@ -11,6 +11,9 @@ public final class Plan {
     public String zone = "America/Vancouver";
     public int availableMinutes = 40;
     public String energy = "any";
+    public long energyExpiresAt;
+    public List<CheckIn> checkIns = new ArrayList<>();
+    public List<SupportAction> supportActions = new ArrayList<>();
     public int bufferMinutes = 5;
     public String reason = "A little room to move your day forward.";
     public String connection = "sample";
@@ -68,6 +71,17 @@ public final class Plan {
             this.id=id; taskId=task.id; stepId=step.id; title=step.title; status="planned";
             this.start=start; minutes=step.minutes; end=start+minutes*60000L;
         }
+    }
+    /** User-reported context only; no mood score or diagnosis is inferred. */
+    public static final class CheckIn {
+        public String id, mood, energy;
+        public long created, expires;
+    }
+    public static final class SupportAction {
+        public String id, kind, title, cue, status="planned", helpfulness="unanswered";
+        public int minutes;
+        public long start, end, created;
+        public boolean scheduleChecked;
     }
     public static final class Job {
         public String id, reason, status="pending";

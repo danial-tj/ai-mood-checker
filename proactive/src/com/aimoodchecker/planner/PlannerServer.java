@@ -17,6 +17,9 @@ public final class PlannerServer {
         PlanStore store=new PlanStore(Path.of(System.getProperty("planner.data",root.resolve("data/planner.db").toString())));
         PlanService service=new PlanService(store,Clock.systemUTC());
         String origin="http://127.0.0.1:"+port;
+        AgentApi agentApi=new AgentApi(service);
+        String agentToken=System.getenv("MOOD_AGENT_TOKEN");
+        boolean agentEnabled=agentToken!=null && agentToken.matches("[A-Za-z0-9_-]{32,512}");
         GoogleCalendar google=new GoogleCalendar(System.getenv("GOOGLE_CLIENT_ID"),System.getenv("GOOGLE_CLIENT_SECRET"),origin+"/oauth/callback",Clock.systemUTC(),GoogleCalendar.network());
         if(!store.read().demo) service.syncFailed("disconnected");
         String csrf=UUID.randomUUID().toString();
@@ -42,6 +45,29 @@ public final class PlannerServer {
                 if(path.equals("/oauth/callback") && exchange.getRequestMethod().equals("GET")) {
                     synchronized(mutationLock) {google.finish(query(exchange.getRequestURI().getRawQuery()));sync.run();}
                     exchange.getResponseHeaders().set("Location","/#connections");exchange.sendResponseHeaders(303,-1);return;
+                }
+                if(path.equals("/api/agent")) {
+                    if(!agentEnabled) {send(exchange,404,"application/json",JSON.writeValueAsString(Map.of("error","Agent connection is not enabled.")));return;}
+                    if(!exchange.getRequestMethod().equals("POST")) {send(exchange,405,"application/json",JSON.writeValueAsString(Map.of("error","POST required.")));return;}
+                    String supplied=exchange.getRequestHeaders().getFirst("Authorization");
+                    boolean authorized=supplied!=null && java.security.MessageDigest.isEqual(
+                        ("Bearer "+agentToken).getBytes(StandardCharsets.UTF_8),supplied.getBytes(StandardCharsets.UTF_8));
+                    if(exchange.getRequestHeaders().getFirst("Origin")!=null || !authorized) {
+                        send(exchange,403,"application/json",JSON.writeValueAsString(Map.of("error","Agent access denied.")));return;
+                    }
+                    byte[] input=exchange.getRequestBody().readNBytes(65537);
+                    if(input.length>65536) {send(exchange,413,"application/json",JSON.writeValueAsString(Map.of("error","Request too large.")));return;}
+                    com.fasterxml.jackson.databind.JsonNode request;
+                    try {request=JSON.readTree(input);} catch(Exception e) {
+                        var error=JSON.createObjectNode();error.put("jsonrpc","2.0");error.putNull("id");
+                        error.putObject("error").put("code",-32700).put("message","Parse error");
+                        send(exchange,400,"application/json",JSON.writeValueAsString(error));return;
+                    }
+                    synchronized(mutationLock) {
+                        var response=agentApi.handle(request);
+                        if(response==null) {exchange.sendResponseHeaders(204,-1);return;}
+                        send(exchange,200,"application/json",JSON.writeValueAsString(response));return;
+                    }
                 }
                 if(path.equals("/api/state") && exchange.getRequestMethod().equals("GET")) {
                     Map<String,Object> result=new HashMap<>(service.view());result.put("csrf",csrf);

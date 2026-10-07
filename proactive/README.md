@@ -1,6 +1,6 @@
-# The next-action prototype
+# Mood support and the next-action prototype
 
-A phone-friendly browser interface that answers one question: **what can I realistically do next, now that my day has changed?** Working students are the first audience hypothesis. Demand, retention and health benefits have not been established.
+A phone-friendly browser interface that helps someone choose **what would help now**, given their time, energy and priorities. Work, meaningful activities, comfortable movement and rest are all valid choices. Working students are the first audience hypothesis. Demand, retention and health benefits have not been established.
 
 This is a local, single-person development prototype. It is intentionally bound to `127.0.0.1`; a phone cannot access it over Wi-Fi yet. Responsive layout is different from a hosted mobile product.
 
@@ -30,9 +30,41 @@ Open [the local app](http://127.0.0.1:8471/). Keep the launcher running. Stop wi
 
 **Replay sample** replaces only planner data after confirmation. Export first if you want to keep custom changes. **Delete planner data** clears tasks, events, responses and preferences, disconnects the in-memory Google session and starts an empty personal plan. It is logical deletion, not a forensic secure erase or deletion of earlier exports.
 
+
+## A complete support loop
+
+On Today, an optional check-in records mood and energy separately. There is no mood score, sentiment inference or diagnosis. The reported context expires after two hours; changing the time available does not renew it. Older stored plans without an energy expiry are treated as unknown energy.
+
+Choose **Make progress**, **Something meaningful**, **Gentle movement**, or **Make room for rest**. A wellbeing action has an editable title, duration and optional “when” cue. The title is the user's choice, not an instruction to an AI. If the calendar is fresh, the backend reserves a fitting slot using the same event buffers and accepted-work constraints. If disconnected or stale, it explicitly saves an unscheduled choice with no claim that the time is free. Either way, the duration cannot exceed the available time the user selected.
+
+An open wellbeing action pauses new work suggestions and deadline warnings. Controls for previously accepted work remain available. A calendar conflict flags a reserved action for review. To choose another time, first report or skip the old action, then create the replacement. Time passing never means completion.
+
+Record **done / partly / skipped** and, separately, **yes / a little / no / unsure / unanswered** to “Did it help?” Reflections can be updated. Completing a wellbeing action does not reduce assignment effort. Repeated completion requests cannot rewrite the result or later feedback. The latest three completed/reflected actions appear under **What helped you?**; this is an observation log, not an effectiveness score or causal model.
+
+Check-ins and wellbeing actions are capped at 100 each in the local planner database. Expiry stops using a check-in as current context; it does not erase its history. They are included in the user's export and cleared with planner data. No journal is imported and no analytics data is transmitted.
+
+### Research behind the ideas
+
+The interface links to published reviews of behavioural activation, exercise, sleep, implementation intentions and progress monitoring. **These short prompts have not been clinically tested.** The research supports ingredients or full programmes, not a claim that this application treats depression or improves mental health. [Research foundation](../docs/RESEARCH-FOUNDATION.md) records populations, limitations and a proposed small adult-student usability pilot.
+
+### Agent connections
+
+A disabled-by-default authenticated local RPC endpoint and a dependency-free MCP stdio bridge expose three scoped tools: get the current action, record an explicitly confirmed check-in, and record an explicitly confirmed wellbeing response. Mood history and calendar events are never returned by those tools; current action titles require a separate per-call sharing opt-in. The host must obtain genuine user confirmation—the boolean in a tool request is not proof by itself.
+
+[Agent connection guide](../docs/AGENT-CONNECTIONS.md) covers the local bridge and the documented routes for Dot, Muse and Grok. **No consumer agent account has been connected or tested.** This private loopback endpoint is not a public MCP deployment. A public connector needs authenticated HTTPS, per-user isolation, scoped grants and actual provider testing; do not expose the prototype directly through a tunnel.
+
 ## Google Calendar setup
 
-The adapter is implemented and exercised with fake responses. It has not been connected to a real account in this development session.
+For a guided first connection, follow [Google Calendar setup](../docs/GOOGLE-CALENDAR-SETUP.md).
+
+The adapter is implemented and exercised with fake responses. It has not been connected to a real account in this development session. A setup helper validates a supplied Desktop OAuth credential file without printing, copying or contacting Google:
+
+```powershell
+.\setup-google-calendar.ps1 -CredentialsFile 'C:\private\google-desktop.json' -CheckOnly
+.\setup-google-calendar.ps1 -CredentialsFile 'C:\private\google-desktop.json'
+```
+
+Keep that file outside this repository. Actual API enablement, test-user access and consent must still be verified at Google.
 
 1. In your Google Cloud project, enable the Google Calendar API and configure the OAuth consent screen for your app. If the app is in testing, add your own Google account as a test user.
 2. Create an OAuth client of type **Desktop app**. This local application uses a loopback redirect, `http://127.0.0.1:8471/oauth/callback` (or the chosen port), a random state value, and PKCE with S256.
@@ -70,6 +102,8 @@ From the repository root:
 ```powershell
 .\verify-planner.ps1        # Java rules, SQLite, clock, adapter and local inbox
 .\verify-planner-http.ps1   # Node 22+: isolated server on port 18471, HTTP boundaries
+node proactive/test/agent-bridge-checks.mjs # MCP bridge and transport, synthetic only
+.\verify-google-setup.ps1   # Synthetic credential-helper checks; no Google requests
 .\verify-functional.ps1     # Existing desktop journal, fresh synthetic database
 .\verify-ui.ps1             # Existing JavaFX render and entry workflow checks
 ```
